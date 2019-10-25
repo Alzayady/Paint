@@ -1,7 +1,7 @@
 package eg.edu.alexu.csd.oop.draw;
 
-public class main {
+class main {
     public static void main(String[] args) {
-        System.out.println("none");
+        MainWindow mainWindow = new MainWindow();
     }
 }
