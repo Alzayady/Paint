@@ -26,6 +26,7 @@ public class IntegrationTest {
     
     @org.junit.Test
     public void testCreation() {
+
         DrawingEngine instance = (DrawingEngine)TestRunner.getImplementationInstanceForInterface(DrawingEngine.class);
         assertNotNull("Failed to create Engine using '" + getSpecifications().getName() + "' !", instance);
     }
