@@ -19,7 +19,8 @@ public interface DrawingEngine {
     public java.util.List<Class<? extends Shape>> getSupportedShapes();
 
     /* add to the supported shapes the new shape class (see Part 3) */
-    // public void installPluginShape(String jarPath);
+
+     public void installPluginShape(String jarPath);
 
     /* limited to 20 steps. Only consider in undo & redo
      * these actions: addShape, removeShape, updateShape */

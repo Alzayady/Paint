@@ -1,20 +1,16 @@
 package eg.edu.alexu.csd.oop.test.draw;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.awt.Color;
-import java.awt.Point;
-import java.util.HashMap;
-import java.util.List;
-
-import javax.swing.DebugGraphics;
-
 import eg.edu.alexu.csd.oop.draw.DrawingEngine;
 import eg.edu.alexu.csd.oop.draw.Shape;
 import eg.edu.alexu.csd.oop.test.DummyShape;
 import eg.edu.alexu.csd.oop.test.TestRunner;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.HashMap;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 
 
@@ -53,6 +49,7 @@ public class IntegrationTest {
         DrawingEngine instance = (DrawingEngine)TestRunner.getImplementationInstanceForInterface(DrawingEngine.class);
         List<Class<? extends Shape>> supportedShapes = instance.getSupportedShapes();
         assertNotNull("No supported shapes returned, check getSupportedShapes function!", supportedShapes);
+        System.out.println(supportedShapes);
         assertFalse("No supported shapes returned, check getSupportedShapes function!", supportedShapes.isEmpty());
         for(Class<? extends Shape> shapeClass : supportedShapes){
             try {

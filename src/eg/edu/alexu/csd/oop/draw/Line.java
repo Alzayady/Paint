@@ -21,27 +21,39 @@ public class Line extends JPanel implements Shape {
     private double c;
     private Point center = new Point();
     private Line line1 = this;
-    private Color color = Color.BLACK;
-    private Color colorBACK = new Color(0, 0, 0, 0);
+    private Color color =Color.BLACK;
+    private Color colorBACK= null;//new Color(0, 0, 0, 0);
     private Map<String, Double> properties = new HashMap<>();
-    private int min(int a, int b) { if (a < b) return a;return b; }
-    private int max(int a, int b) { if (a > b) return a;return b; }
+    private boolean selectp2;
+
+    private int min(int a, int b) {
+        if (a < b) return a;
+        return b;
+    }
+
+    private int max(int a, int b) {
+        if (a > b) return a;
+        return b;
+    }
+
     Line() {
         this.DrawLine();
     }
+
     Line(Point point1, Point point2) {
         this.point1 = point1;
         this.point2 = point2;
     }
 
-    Line(Point point1, Point point2, Color color,Color BG) {
+    Line(Point point1, Point point2, Color color, Color BG) {
         this.point1 = point1;
         this.point2 = point2;
-        this.color=color;
-        colorBACK=BG;
+        this.color = color;
+        colorBACK = BG;
     }
+
     public void paint(Graphics g) {
-        g.setColor(color);
+       if(color!=null) g.setColor(color);
         g.drawLine(point1.x - 6, point1.y - 52, point2.x - 6, point2.y - 52);
     }
 
@@ -55,7 +67,7 @@ public class Line extends JPanel implements Shape {
                     MainWindow.mainFrame.repaint();
                 }
                 point2 = e.getPoint();
-                line = new Line(point1, point2,color,colorBACK);
+                line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
                 MainWindow.mainFrame.add(line);
                 MainWindow.mainFrame.setVisible(true);
             }
@@ -88,6 +100,7 @@ public class Line extends JPanel implements Shape {
                 MainWindow.mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 MainWindow.mainFrame.removeMouseListener(MainWindow.mouseListener);
                 CALCDETAILS();
+                MainWindow.saveToLog();
             }
         };
         MainWindow.mainFrame.addMouseListener(MainWindow.mouseListener);
@@ -144,10 +157,11 @@ public class Line extends JPanel implements Shape {
         point2.y += appendy;
         MainWindow.mainFrame.remove(line);
         MainWindow.mainFrame.setVisible(true);
-        line = new Line(point1, point2,color,colorBACK);
+        line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
         MainWindow.mainFrame.add(line);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
+        MainWindow.saveToLog();
     }
 
     @Override
@@ -175,7 +189,7 @@ public class Line extends JPanel implements Shape {
             point2.y = (int) y;
         }
         mainFrame.remove(line);
-        line = new Line(point1, point2,color,colorBACK);
+        line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
         mainFrame.add(line);
         CALCDETAILS();
         mainFrame.setVisible(true);
@@ -188,31 +202,37 @@ public class Line extends JPanel implements Shape {
 
     @Override
     public Map<String, Double> getProperties() {
-        properties=new HashMap<>();
-        properties.put("point1x",(double)point1.x);
-        properties.put("point1y",(double)point1.y);
-        properties.put("point2x",(double)point2.x);
-        properties.put("point2y",(double)point2.y);
+        properties = new HashMap<>();
+        properties.put("point1x", (double) point1.x);
+        properties.put("point1y", (double) point1.y);
+        properties.put("point2x", (double) point2.x);
+        properties.put("point2y", (double) point2.y);
         return properties;
     }
 
     @Override
     public void setColor(Color color) {
-        this.color=color;
+        if(color.getBlue()==255&&color.getGreen()==255&color.getRed()==255)return;
+        this.color = color;
         mainFrame.remove(line);
-        line=new Line(point1,point2,color,colorBACK);
+        line = new Line(point1, point2, color, null);
+
+        System.out.println(color);
         mainFrame.add(line);
         mainFrame.setVisible(true);
-        mainFrame.repaint(); }
+        mainFrame.repaint();
+        MainWindow.saveToLog();
+    }
 
     @Override
     public Color getColor() {
+
         return color;
     }
 
     @Override
     public void setFillColor(Color color) {
-          this.colorBACK=color;
+        this.colorBACK = color;
     }
 
     @Override
@@ -222,8 +242,8 @@ public class Line extends JPanel implements Shape {
 
     public void remove() {
         MainWindow.mainFrame.remove(line);
-        MainWindow.mainFrame.repaint();
         MainWindow.mainFrame.setVisible(true);
+        MainWindow.mainFrame.repaint();
     }
 
     @Override
@@ -233,8 +253,8 @@ public class Line extends JPanel implements Shape {
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        if(line!=null)mainFrame.remove(line);
-        line=new Line(point1,point2);
+        if (line != null) mainFrame.remove(line);
+        line = new Line(point1, point2,color,new Color(0, 0, 0, 0));
         mainFrame.add(line);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
@@ -242,12 +262,23 @@ public class Line extends JPanel implements Shape {
         return line;
     }
 
+    // returns another object of the same class not the same object as the original
+    public Shape copy() {
+        Shape newShape = new Line(point1, point2);
+//        ((Line) newShape).remove();
+        shapes.remove(newShape);
+        MainWindow.mainFrame.setVisible(true);
+        MainWindow.mainFrame.repaint();
+        return newShape;
+    }
+
     public void resize(Point p) {
         if (Math.pow(p.x - point1.x, 2) + Math.pow(p.y - point1.y, 2) < Math.pow(p.x - point2.x, 2) + Math.pow(p.y - point2.y, 2)) {
+            selectp2 = true;
             System.out.println(1);
-            ;
             selectp2();
         } else {
+            selectp2 = false;
             selectp1();
         }
     }
@@ -269,6 +300,7 @@ public class Line extends JPanel implements Shape {
                 mainFrame.removeMouseListener(MainWindow.mouseListener);
                 mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 CALCDETAILS();
+                if (selectp2) MainWindow.saveToLog();
             }
 
             @Override
@@ -291,7 +323,7 @@ public class Line extends JPanel implements Shape {
                     MainWindow.mainFrame.repaint();
                 }
                 point1 = e.getPoint();
-                line = new Line(point1, point2,color,colorBACK);
+                line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
                 MainWindow.mainFrame.add(line);
                 MainWindow.mainFrame.setVisible(true);
 
@@ -324,6 +356,7 @@ public class Line extends JPanel implements Shape {
                 mainFrame.removeMouseListener(MainWindow.mouseListener);
                 mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 CALCDETAILS();
+                if (!selectp2) MainWindow.saveToLog();
             }
 
             @Override
@@ -346,7 +379,7 @@ public class Line extends JPanel implements Shape {
                     MainWindow.mainFrame.repaint();
                 }
                 point2 = e.getPoint();
-                line = new Line(point1, point2,color,colorBACK);
+                line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
                 MainWindow.mainFrame.add(line);
                 MainWindow.mainFrame.setVisible(true);
 

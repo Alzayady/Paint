@@ -23,10 +23,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MainWindow implements DrawingEngine {
     static JFrame mainFrame;
@@ -34,6 +32,8 @@ public class MainWindow implements DrawingEngine {
     static MouseListener mouseListener;
     static LinkedList<Shape> shapes = new LinkedList<>();
     private Shape selectedShape;
+    List<Class<? extends Shape>> die = new LinkedList<>();
+
     public MouseListener MouseListenerSelect = new MouseListener() {
         @Override
         public void mouseClicked(MouseEvent mouseEvent) {
@@ -42,16 +42,20 @@ public class MainWindow implements DrawingEngine {
         }
 
         @Override
-        public void mousePressed(MouseEvent mouseEvent) { }
+        public void mousePressed(MouseEvent mouseEvent) {
+        }
 
         @Override
-        public void mouseReleased(MouseEvent mouseEvent) { }
+        public void mouseReleased(MouseEvent mouseEvent) {
+        }
 
         @Override
-        public void mouseEntered(MouseEvent mouseEvent) { }
+        public void mouseEntered(MouseEvent mouseEvent) {
+        }
 
         @Override
-        public void mouseExited(MouseEvent mouseEvent) { }
+        public void mouseExited(MouseEvent mouseEvent) {
+        }
     };
     private MouseListener mouseListenerRePosition;
     /*
@@ -62,15 +66,26 @@ public class MainWindow implements DrawingEngine {
     private JColorChooser colorFontChooser = new JColorChooser();
     private Color chosenFillColor = Color.white;
     private Color chosenFontColor = Color.BLACK;
-    private boolean TYPEISXML=false;
+    private boolean TYPEISXML = false;
+    /*belongs to undo and redo */
+    static LinkedList<LinkedList<Shape>> log = new LinkedList<>();
+    private LinkedList<LinkedList<Shape>> redoLog = new LinkedList<>();
+//    JMenuItem delete = new JMenuItem("delete");
+
     public MainWindow() {
         mainFrame = new JFrame("Draw");
         mainFrame.setBackground(Color.white);
-        mainFrame.setSize(800, 700);
+        mainFrame.setBounds(300, 100, 800, 700);
         mainFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         mainFrame.setLayout(new BorderLayout());
         mainFrame.addMouseListener(this.MouseListenerSelect);
-
+        saveToLog();
+        die.add(Circle.class);
+        die.add(Line.class);
+        die.add(Oval.class);
+        die.add(Triangle.class);
+        die.add(Rectangle.class);
+        die.add(Square.class);
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         } catch (Exception e) {
@@ -90,23 +105,25 @@ public class MainWindow implements DrawingEngine {
                     if ((selectedShape != null)) {
                         if (selectedShape instanceof Circle) {
                             mainFrame.remove((Component) ((Circle) (selectedShape)).getShape());
+                            MainWindow.saveToLog();
                         } else if (selectedShape instanceof Oval) {
                             mainFrame.remove((Component) ((Oval) (selectedShape)).getShape());
+                            MainWindow.saveToLog();
                         } else if (selectedShape instanceof Line) {
                             ((Line) selectedShape).remove();
-                           // mainFrame.remove((Component) ((Line) (selectedShape)).getShape());
+                            MainWindow.saveToLog();
+                            // mainFrame.remove((Component) ((Line) (selectedShape)).getShape());
                         } else if (selectedShape instanceof Rectangle) {
                             mainFrame.remove((Component) ((Rectangle) (selectedShape)).getShape());
+                            MainWindow.saveToLog();
                         } else if (selectedShape instanceof Square) {
                             mainFrame.remove((Component) ((Square) (selectedShape)).getShape());
+                            MainWindow.saveToLog();
                         } else if (selectedShape instanceof Triangle) {
                             ((Triangle) selectedShape).remove();
+                            MainWindow.saveToLog();
                         }
                         shapes.remove(selectedShape);
-//                        try {
-//                            mainFrame.remove((Component) (selectedShape));
-//                        } catch (Exception e1) {
-//                        }
                         System.out.println("Shape with center = " + selectedShape.getPosition().toString() + " was removed");
                         selectedShape = null;
                         mainFrame.repaint();
@@ -138,7 +155,7 @@ public class MainWindow implements DrawingEngine {
                     if (selectedShape != null) {
                         colorChooserFrame = new JFrame("choose color");
                         colorChooserFrame.setVisible(true);
-                        colorChooserFrame.setBounds(500, 100, 500, 700);
+                        colorChooserFrame.setBounds(100, 100, 500, 700);
                         colorChooserFrame.setLayout(new BorderLayout());
 //                        colorChooserFrame.add(new JLabel("choose fill color"),BorderLayout.LINE_START);
                         colorChooserFrame.add(colorFillChooser, BorderLayout.PAGE_START);
@@ -150,10 +167,8 @@ public class MainWindow implements DrawingEngine {
                                 chosenFillColor = colorFillChooser.getColor();
                                 chosenFontColor = colorFontChooser.getColor();
                                 System.out.println("Color fill Chosen = " + chosenFillColor + " and color boundries chosen + " + chosenFontColor);
-                                //selectedShape.setPosition(selectedShape.getPosition());
                                 selectedShape.setFillColor(chosenFillColor);
                                 selectedShape.setColor(chosenFontColor);
-                             //   selectedShape = shapes.getLast();
                             }
                         };
                         colorFillChooser.getSelectionModel().addChangeListener(changeListener);
@@ -183,14 +198,22 @@ public class MainWindow implements DrawingEngine {
                                 mainFrame.removeMouseListener(mouseListenerRePosition);
                                 mainFrame.addMouseListener(MouseListenerSelect);
                             }
+
                             @Override
-                            public void mousePressed(MouseEvent e) { }
+                            public void mousePressed(MouseEvent e) {
+                            }
+
                             @Override
-                            public void mouseReleased(MouseEvent e) { }
+                            public void mouseReleased(MouseEvent e) {
+                            }
+
                             @Override
-                            public void mouseEntered(MouseEvent e) { }
+                            public void mouseEntered(MouseEvent e) {
+                            }
+
                             @Override
-                            public void mouseExited(MouseEvent e) { }
+                            public void mouseExited(MouseEvent e) {
+                            }
                         };
                         mainFrame.addMouseListener(mouseListenerRePosition);
                         mainFrame.repaint();
@@ -201,16 +224,16 @@ public class MainWindow implements DrawingEngine {
                 }
             }
         });
-        JMenuItem save = new JMenuItem("save");
-        JMenuItem XML = new JMenuItem("XML");
 
-        save.addActionListener(new ActionListener() {
+        JMenuItem XML = new JMenuItem("Save as XML");
+
+        XML.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 mainFrame.removeMouseMotionListener(mouseMotionListener);
                 mainFrame.removeMouseListener(mouseListener);
-                if (e.getActionCommand().equals("XML")) {
-                    TYPEISXML=true;
+                if (e.getActionCommand().equals("Save as XML")) {
+                    TYPEISXML = true;
                     JFileChooser fileChooser = new JFileChooser("f:");
                     int r = fileChooser.showSaveDialog(null);
                     if (r == JFileChooser.APPROVE_OPTION) {
@@ -225,15 +248,15 @@ public class MainWindow implements DrawingEngine {
             }
         });
 
-        JMenuItem JSON = new JMenuItem("JSON");
+        JMenuItem JSON = new JMenuItem("Save as JSON");
 
-        save.addActionListener(new ActionListener() {
+        JSON.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 mainFrame.removeMouseMotionListener(mouseMotionListener);
                 mainFrame.removeMouseListener(mouseListener);
-                if (e.getActionCommand().equals("JSON")) {
-                    TYPEISXML=false;
+                if (e.getActionCommand().equals("Save as JSON")) {
+                    TYPEISXML = false;
                     JFileChooser fileChooser = new JFileChooser("f:");
                     int r = fileChooser.showSaveDialog(null);
                     if (r == JFileChooser.APPROVE_OPTION) {
@@ -247,7 +270,6 @@ public class MainWindow implements DrawingEngine {
 
             }
         });
-
 
 
         JMenuItem load = new JMenuItem("open");
@@ -270,7 +292,23 @@ public class MainWindow implements DrawingEngine {
             }
         });
         JMenuItem undo = new JMenuItem("undo");
+        undo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (e.getActionCommand().equals("undo")) {
+                    undo();
+                }
+            }
+        });
         JMenuItem redo = new JMenuItem("redo");
+        redo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (e.getActionCommand().equals("redo")) {
+                    redo();
+                }
+            }
+        });
         // circle
         JMenuItem circle = new JMenuItem("circle");
         circle.addActionListener(new ActionListener() {
@@ -303,10 +341,8 @@ public class MainWindow implements DrawingEngine {
                 mainFrame.removeMouseMotionListener(mouseMotionListener);
                 mainFrame.removeMouseListener(mouseListener);
                 if (e.getActionCommand().equals("triangle")) {
-                    Triangle triangle1 = new Triangle();
-                    if (triangle1.getShape() != null) {
-                      //  shapes.add(triangle1);
-                    }
+                    new Triangle();
+
                 }
             }
         });
@@ -320,7 +356,7 @@ public class MainWindow implements DrawingEngine {
                 if (e.getActionCommand().equals("rectangle")) {
                     Rectangle rectangle1 = new Rectangle();
                     if (rectangle1.getShape() != null) {
-                      //  shapes.add(rectangle1);
+                        //  shapes.add(rectangle1);
                     }
                 }
             }
@@ -355,14 +391,15 @@ public class MainWindow implements DrawingEngine {
                 mainFrame = new JFrame("Draw");
             }
         });
+
         JMenuItem close = new JMenuItem("close");
         close.addActionListener(e -> {
             mainFrame.dispatchEvent(new WindowEvent(mainFrame, WindowEvent.WINDOW_CLOSING));
         });
 
-        save.add(XML);
-        save.add(JSON);
-        fileMenu.add(save);
+        fileMenu.add(XML);
+        fileMenu.add(JSON);
+        //fileMenu.add(save);
         fileMenu.add(load);
         fileMenu.add(newFile);
         fileMenu.add(close);
@@ -372,6 +409,7 @@ public class MainWindow implements DrawingEngine {
         editMenu.add(resize);
         editMenu.add(rePosition);
         editMenu.add(changeColor);
+
         shapesMenu.add(circle);
         shapesMenu.add(square);
         shapesMenu.add(triangle);
@@ -400,75 +438,261 @@ public class MainWindow implements DrawingEngine {
                 this.colorChooserFrame = null;
             }
             //
-            System.out.println(shape.getClass());
+//            System.out.println(shape.getClass());
             if ((shape instanceof Circle) && ((Circle) shape).coversPoint(point)) {
                 System.out.println("Circle is selected with center = " + (((Circle) shape).getPosition().toString()));
+                properties(shape);
                 ((Circle) shape).resize();
                 return (Circle) shape;
             } else if ((shape instanceof Square) && ((Square) shape).coversPoint(point)) {
                 System.out.println("Square is selected with center = " + (((Square) shape).getPosition().toString()));
+                properties(shape);
                 ((Square) shape).resize();
                 return (Square) shape;
             } else if ((shape instanceof Rectangle) && ((Rectangle) shape).coversPoint(point)) {
                 System.out.println("Rectangle is selected with center = " + (((Rectangle) shape).getPosition().toString()));
+                properties(shape);
                 ((Rectangle) shape).resize();
                 return (Rectangle) shape;
             } else if ((shape instanceof Oval) && ((Oval) shape).coversPoint(point)) {
                 System.out.println("Ellipse is selected with center = " + (((Oval) shape).getPosition().toString()));
+                properties(shape);
                 ((Oval) shape).resize();
                 return (Oval) shape;
             } else if ((shape instanceof Line) && ((Line) shape).coversPoint(point)) {
                 System.out.println("Line is selected with head = " + (((Line) shape).getPosition().toString()));
+                properties(shape);
                 ((Line) (shape)).resize(point);
                 return (Line) shape;
             } else if ((shape instanceof Triangle) && ((Triangle) shape).coversPoint(point)) {
                 System.out.println("Triangle is selected with center = " + (((Triangle) shape).getPosition().toString()));
+                properties(shape);
                 ((Triangle) (shape)).resize(point);
                 return (Triangle) shape;
             }
+//            try {
+//                properties(shape);
+//            } catch (Exception e){
+//                JOptionPane.showMessageDialog(mainFrame, "Can't Show Details");
+//            }
         }
         return null;
+    }
+
+    private void properties(Shape shape) {
+        String name = shape.getClass().getSimpleName();
+        JFrame propertiesFrame = new JFrame("Properties of " + name);
+        propertiesFrame.setBounds(100, 50, 600, 200);
+        propertiesFrame.setBackground(Color.white);
+        propertiesFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        propertiesFrame.setLayout(new BorderLayout());
+        propertiesFrame.setVisible(true);
+        propertiesFrame.repaint();
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setSize(propertiesFrame.getWidth(), propertiesFrame.getHeight());
+
+        JLabel typeLabel = new JLabel("Type Of The Shape = " + name);
+
+        JLabel centerLabel = new JLabel("Center = [ " + shape.getPosition().x + " , " + shape.getPosition().y + " ]");
+        centerLabel.setSize(propertiesFrame.getWidth(), 30);
+        Color fillColor;
+        Color borderColor;
+        if (shape.getFillColor() == null) {
+            fillColor = Color.white;
+        } else {
+            fillColor = shape.getFillColor();
+        }
+        if (shape.getColor() == null) {
+            borderColor = Color.BLACK;
+        } else {
+            borderColor = shape.getColor();
+        }
+        JLabel fillColorLabel = new JLabel("Background Color = [ R = " + fillColor.getRed() + " , G = " + fillColor.getGreen()
+                + " , B = " + fillColor.getBlue() + " ]");
+        fillColorLabel.setSize(propertiesFrame.getWidth(), 30);
+        fillColorLabel.setForeground(shape.getFillColor());
+        JLabel borderColorLabel = new JLabel("Border Color = [ R = " + borderColor.getRed() + " , G = " + borderColor.getGreen()
+                + " , B = " + borderColor.getBlue() + " ]");
+        borderColorLabel.setSize(propertiesFrame.getWidth(), 30);
+        borderColorLabel.setForeground(shape.getColor());
+
+        panel.add(typeLabel);
+        panel.add(centerLabel);
+
+        if (shape instanceof Circle) {
+            JLabel radiusLabel = new JLabel("Radius  = " + ((Circle) shape).getProperties().get("r").intValue() + " pixel");
+            radiusLabel.setSize(propertiesFrame.getWidth(), 30);
+            panel.add(radiusLabel);
+        } else if (shape instanceof Square) {
+            JLabel headCursorLabel = new JLabel("Top Left Corner = [ " + shape.getProperties().get("headX") + " , " + shape.getProperties().get("headY")
+                    + " ], And Bottom Right Corner = [" + shape.getProperties().get("courserX") + " , " + shape.getProperties().get("courserX") + " ]");
+            headCursorLabel.setSize(propertiesFrame.getWidth(), 30);
+            panel.add(headCursorLabel);
+        } else if (shape instanceof Rectangle) {
+            JLabel headCursorLabel = new JLabel("Top Left Corner = [ " + shape.getProperties().get("headX") + " , " + shape.getProperties().get("headY")
+                    + " ]\n, And Bottom Right Corner = [ " + shape.getProperties().get("courserX") + " , " + shape.getProperties().get("courserX") + " ]");
+            headCursorLabel.setSize(propertiesFrame.getWidth(), 30);
+            panel.add(headCursorLabel);
+        } else if (shape instanceof Oval) {
+            JLabel headCursorLabel = new JLabel("Top Left Corner = [ " + shape.getProperties().get("headX") + " , " + shape.getProperties().get("headY")
+                    + " ]\n, And Bottom Right Corner = [ " + shape.getProperties().get("courserX") + " , " + shape.getProperties().get("courserX") + " ]");
+            headCursorLabel.setSize(propertiesFrame.getWidth(), 30);
+            panel.add(headCursorLabel);
+        } else if (shape instanceof Line) {
+            JLabel twoPoints = new JLabel("First Point = [ " + shape.getProperties().get("point1x") + " , " + shape.getProperties().get("point1y")
+                    + " ]\n, Second Point = [ " + shape.getProperties().get("point2x") + " , " + shape.getProperties().get("point2y") + " ]");
+            twoPoints.setSize(propertiesFrame.getWidth(), 30);
+            panel.add(twoPoints);
+        } else if (shape instanceof Triangle) {
+            JLabel threePoints = new JLabel("First Point = [ " + shape.getProperties().get("point1x") + " , " + shape.getProperties().get("point1y")
+                    + " ]\n, Second Point = [ " + shape.getProperties().get("point2x") + " , " + shape.getProperties().get("point2y") + " ]\n" +
+                    ", Third Point = [ " + shape.getProperties().get("point3x") + " , " + shape.getProperties().get("point3y") + " ]");
+            threePoints.setSize(propertiesFrame.getWidth(), 30);
+            panel.add(threePoints);
+        }
+        panel.add(fillColorLabel);
+        panel.add(borderColorLabel);
+
+        JButton exit = new JButton("resize");
+        exit.setHorizontalAlignment(SwingConstants.LEFT);
+        exit.setVerticalAlignment(SwingConstants.BOTTOM);
+        exit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (e.getActionCommand().equals("resize")) {
+                    propertiesFrame.dispatchEvent(new WindowEvent(propertiesFrame, WindowEvent.WINDOW_CLOSING));
+                }
+            }
+        });
+        panel.add(exit);
+        propertiesFrame.setContentPane(panel);
+        propertiesFrame.setVisible(true);
+        propertiesFrame.repaint();
     }
 
 
     @Override
     public void refresh(Graphics canvas) {
-
+        for (Shape s : shapes) {
+            s.draw(canvas);
+        }
     }
 
     @Override
     public void addShape(Shape shape) {
-
+shapes.add(shape);
     }
 
     @Override
     public void removeShape(Shape shape) {
 
+        shapes.remove(shape);
     }
 
     @Override
     public void updateShape(Shape oldShape, Shape newShape) {
 
+        shapes.remove(oldShape);
+        shapes.add(newShape);
+
     }
 
     @Override
     public Shape[] getShapes() {
-        return (Shape[]) shapes.toArray();
+        Shape arr[]=new Shape[shapes.size()];
+        for(int i=0;i<shapes.size();i++){
+            arr[i]=shapes.get(i);
+        }
+        return arr;
     }
+
     @Override
     public List<Class<? extends Shape>> getSupportedShapes() {
-        return null;
+        return die;
     }
 
     @Override
-    public void undo() {
+    public void installPluginShape(String jarPath) {
 
+    }
+
+
+    // know that the current shapes and the last list on the log are the same so the pre-shapes is pre-last list on log
+    @Override
+    public void undo() {
+        if (log.isEmpty() || log.size() == 1) {
+            JOptionPane.showMessageDialog(mainFrame, "the is no process done to to be undone!!");
+            return;
+        }
+        // clear mainFrame from shapes
+        deleteAll();
+        // getting the previously drawn shapes on mainFrame
+        shapes = cloneShapes(log.get(log.size() - 2));
+        // adding to the redo log the undone
+        redoLog.addFirst(cloneShapes(log.getLast()));
+        log.removeLast();
+        // redraw all the previous shapes (updating)
+        for (Shape shape : shapes) {
+            // shape.setFillColor(shape.getFillColor());
+            try {
+                shape.clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
+        }
+        selectedShape = null;
+        mainFrame.setVisible(true);
+        mainFrame.repaint();
     }
 
     @Override
     public void redo() {
-
+        if (redoLog.isEmpty()) {
+            JOptionPane.showMessageDialog(mainFrame, "nothing is undone to be redone");
+            return;
+        }
+        // adding the upcoming redone shapes to the log and assigning the current shapes to the undone shapes
+        deleteAll();
+        shapes = cloneShapes(redoLog.getFirst());
+        log.addLast(cloneShapes(redoLog.getFirst()));
+        redoLog.removeFirst();
+        // updating the shapes in the mainFrame
+        for (Shape shape : shapes) {
+            shape.setFillColor(shape.getFillColor());
+        }
+        selectedShape = null;
+        mainFrame.setVisible(true);
+        mainFrame.repaint();
     }
+
+    // add to log another shapes list with same properties and different objects from the original
+    static void saveToLog() {
+        log.addLast(cloneShapes(shapes));
+        System.out.println("save to log called in " + new Exception().getStackTrace()[1].getClassName() + " , size of shapes = " + shapes.size() + ", size of log = " + log.size());
+    }
+
+    private static LinkedList<Shape> cloneShapes(LinkedList<Shape> shapes) {
+        LinkedList<Shape> cloneList = new LinkedList<>();
+        for (Shape shape : shapes) {
+            if (shape instanceof Circle) {
+                cloneList.add(((Circle) shape).copy());
+            } else if (shape instanceof Square) {
+                cloneList.add(((Square) shape).copy());
+            } else if (shape instanceof Rectangle) {
+                cloneList.add(((Rectangle) shape).copy());
+            } else if (shape instanceof Oval) {
+                cloneList.add(((Oval) shape).copy());
+            } else if (shape instanceof Line) {
+                cloneList.add(((Line) shape).copy());
+            } else if (shape instanceof Triangle) {
+                cloneList.add(((Triangle) shape).copy());
+            }
+        }
+        return cloneList;
+    }
+
 
     @Override
     public void save(String path) {
@@ -699,7 +923,7 @@ public class MainWindow implements DrawingEngine {
                 e.printStackTrace();
             }
             DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(new File(path+".xml"));
+            StreamResult result = new StreamResult(new File(path + ".xml"));
             try {
                 transformer.transform(source, result);
             } catch (TransformerException e) {
@@ -714,13 +938,13 @@ public class MainWindow implements DrawingEngine {
                 e.printStackTrace();
             }
         } else {
-       boolean f =true;
+            boolean f = true;
             String json = "{  \"Circle\": ";
             for (int i = 0; i < shapes.size(); i++) {
                 Shape s = shapes.get(i);
                 if (s instanceof Circle) {
-                    if(f)json+="[";
-                    f=false;
+                    if (f) json += "[";
+                    f = false;
                     HashMap<String, Double> p = (HashMap<String, Double>) s.getProperties();
                     String a = "{";
                     a += "\"x\": " + p.get("x") + ",";
@@ -736,29 +960,29 @@ public class MainWindow implements DrawingEngine {
                     json += a;
                 }
             }
-            String t="";
-            if(json.charAt(json.length()-1)==','){
-                for(int i=0;i<json.length()-1;i++){
-                    t+=json.charAt(i);
+            String t = "";
+            if (json.charAt(json.length() - 1) == ',') {
+                for (int i = 0; i < json.length() - 1; i++) {
+                    t += json.charAt(i);
                 }
-                json=t;
+                json = t;
             }
-            if(f)json+="[";
-            json+="]";
-           f=true;
-           json+= ",  \"Square\": ";
+            if (f) json += "[";
+            json += "]";
+            f = true;
+            json += ",  \"Square\": ";
             for (int i = 0; i < shapes.size(); i++) {
                 Shape s = shapes.get(i);
                 if (s instanceof Square) {
-                 //   if(!f)json+=",";
-                    if(f)json+="[";
-                    f=false;
+                    //   if(!f)json+=",";
+                    if (f) json += "[";
+                    f = false;
                     String a = "{";
                     HashMap<String, Double> p = (HashMap<String, Double>) s.getProperties();
-                            a+="\"headX\": "+p.get("headX")+",";
-                            a+="\"headY\": "+p.get("headY")+",";
-                            a+="\"courserX\": "+p.get("courserX")+",";
-                            a+="\"courserY\": "+p.get("courserY");
+                    a += "\"headX\": " + p.get("headX") + ",";
+                    a += "\"headY\": " + p.get("headY") + ",";
+                    a += "\"courserX\": " + p.get("courserX") + ",";
+                    a += "\"courserY\": " + p.get("courserY");
                     if (s.getColor() != null) {
                         a += ",\"color\": \"" + s.getColor().getRed() + "," + s.getColor().getGreen() + "," + s.getColor().getBlue() + "\"";
                     }
@@ -769,28 +993,28 @@ public class MainWindow implements DrawingEngine {
                     json += a;
                 }
             }
-             t="";
-            for(int i=0;i<json.length()-1;i++){
-                t+=json.charAt(i);
+            t = "";
+            for (int i = 0; i < json.length() - 1; i++) {
+                t += json.charAt(i);
             }
-            json=t;
-            if(f)json+="[";
-            json+="]";
+            json = t;
+            if (f) json += "[";
+            json += "]";
 
-            f=true;
-            json+= ",\"Rectangle\": ";
+            f = true;
+            json += ",\"Rectangle\": ";
             for (int i = 0; i < shapes.size(); i++) {
                 Shape s = shapes.get(i);
                 if (s instanceof Rectangle) {
-                   // if(!start&&f)json+=",";
-                    if(f)json+="[";
-                    f=false;
+                    // if(!start&&f)json+=",";
+                    if (f) json += "[";
+                    f = false;
                     String a = "{";
                     HashMap<String, Double> p = (HashMap<String, Double>) s.getProperties();
-                    a+="\"headX\": "+p.get("headX")+",";
-                    a+="\"headY\": "+p.get("headY")+",";
-                    a+="\"courserX\": "+p.get("courserX")+",";
-                    a+="\"courserY\": "+p.get("courserY");
+                    a += "\"headX\": " + p.get("headX") + ",";
+                    a += "\"headY\": " + p.get("headY") + ",";
+                    a += "\"courserX\": " + p.get("courserX") + ",";
+                    a += "\"courserY\": " + p.get("courserY");
                     if (s.getColor() != null) {
                         a += ",\"color\": \"" + s.getColor().getRed() + "," + s.getColor().getGreen() + "," + s.getColor().getBlue() + "\"";
                     }
@@ -801,26 +1025,26 @@ public class MainWindow implements DrawingEngine {
                     json += a;
                 }
             }
-            t="";
-            for(int i=0;i<json.length()-1;i++){
-                t+=json.charAt(i);
+            t = "";
+            for (int i = 0; i < json.length() - 1; i++) {
+                t += json.charAt(i);
             }
-            json=t;
-            if(f)json+="[";
-            json+="]";
-            f=true;
-            json+= ", \"Oval\": ";
+            json = t;
+            if (f) json += "[";
+            json += "]";
+            f = true;
+            json += ", \"Oval\": ";
             for (int i = 0; i < shapes.size(); i++) {
                 Shape s = shapes.get(i);
                 if (s instanceof Oval) {
-                    if(f)json+="[";
-                    f=false;
+                    if (f) json += "[";
+                    f = false;
                     String a = "{";
                     HashMap<String, Double> p = (HashMap<String, Double>) s.getProperties();
-                    a+="\"headX\": "+p.get("headX")+",";
-                    a+="\"headY\": "+p.get("headY")+",";
-                    a+="\"courserX\": "+p.get("courserX")+",";
-                    a+="\"courserY\": "+p.get("courserY");
+                    a += "\"headX\": " + p.get("headX") + ",";
+                    a += "\"headY\": " + p.get("headY") + ",";
+                    a += "\"courserX\": " + p.get("courserX") + ",";
+                    a += "\"courserY\": " + p.get("courserY");
                     if (s.getColor() != null) {
                         a += ",\"color\": \"" + s.getColor().getRed() + "," + s.getColor().getGreen() + "," + s.getColor().getBlue() + "\"";
                     }
@@ -831,27 +1055,27 @@ public class MainWindow implements DrawingEngine {
                     json += a;
                 }
             }
-            t="";
-            for(int i=0;i<json.length()-1;i++){
-                t+=json.charAt(i);
+            t = "";
+            for (int i = 0; i < json.length() - 1; i++) {
+                t += json.charAt(i);
             }
-            json=t;
-            if(f)json+="[";
-            json+="]";
-            f=true;
-            json+= ", \"Line\": ";
+            json = t;
+            if (f) json += "[";
+            json += "]";
+            f = true;
+            json += ", \"Line\": ";
             for (int i = 0; i < shapes.size(); i++) {
                 Shape s = shapes.get(i);
                 if (s instanceof Line) {
                     //   if(!start&&f)json+=",";
-                    if(f)json+="[";
-                    f=false;
+                    if (f) json += "[";
+                    f = false;
                     String a = "{";
                     HashMap<String, Double> p = (HashMap<String, Double>) s.getProperties();
-                    a+="\"point1x\": "+p.get("point1x")+",";
-                    a+="\"point1y\": "+p.get("point1y")+",";
-                    a+="\"point2x\": "+p.get("point2x")+",";
-                    a+="\"point2y\": "+p.get("point2y");
+                    a += "\"point1x\": " + p.get("point1x") + ",";
+                    a += "\"point1y\": " + p.get("point1y") + ",";
+                    a += "\"point2x\": " + p.get("point2x") + ",";
+                    a += "\"point2y\": " + p.get("point2y");
                     if (s.getColor() != null) {
                         a += ",\"color\": \"" + s.getColor().getRed() + "," + s.getColor().getGreen() + "," + s.getColor().getBlue() + "\"";
                     }
@@ -860,28 +1084,28 @@ public class MainWindow implements DrawingEngine {
                     json += a;
                 }
             }
-            t="";
-            for(int i=0;i<json.length()-1;i++){
-                t+=json.charAt(i);
+            t = "";
+            for (int i = 0; i < json.length() - 1; i++) {
+                t += json.charAt(i);
             }
-            json=t;
-            if(f)json+="[";
-            json+="]";
-            f=true;
-            json+= ", \"Triangle\": ";
+            json = t;
+            if (f) json += "[";
+            json += "]";
+            f = true;
+            json += ", \"Triangle\": ";
             for (int i = 0; i < shapes.size(); i++) {
                 Shape s = shapes.get(i);
                 if (s instanceof Triangle) {
-                    if(f)json+="[";
-                    f=false;
+                    if (f) json += "[";
+                    f = false;
                     String a = "{";
                     HashMap<String, Double> p = (HashMap<String, Double>) s.getProperties();
-                    a+="\"point1x\": "+p.get("point1x")+",";
-                    a+="\"point1y\": "+p.get("point1y")+",";
-                    a+="\"point2x\": "+p.get("point2x")+",";
-                    a+="\"point2y\": "+p.get("point2y")+",";
-                    a+="\"point3x\": "+p.get("point3x")+",";
-                    a+="\"point3y\": "+p.get("point3y");
+                    a += "\"point1x\": " + p.get("point1x") + ",";
+                    a += "\"point1y\": " + p.get("point1y") + ",";
+                    a += "\"point2x\": " + p.get("point2x") + ",";
+                    a += "\"point2y\": " + p.get("point2y") + ",";
+                    a += "\"point3x\": " + p.get("point3x") + ",";
+                    a += "\"point3y\": " + p.get("point3y");
                     if (s.getColor() != null) {
                         a += ",\"color\": \"" + s.getColor().getRed() + "," + s.getColor().getGreen() + "," + s.getColor().getBlue() + "\"";
                     }
@@ -892,19 +1116,19 @@ public class MainWindow implements DrawingEngine {
                     json += a;
                 }
             }
-            t="";
-            for(int i=0;i<json.length()-1;i++){
-                t+=json.charAt(i);
+            t = "";
+            for (int i = 0; i < json.length() - 1; i++) {
+                t += json.charAt(i);
             }
-            json=t;
-            if(f)json+="[";
-            json+="]";
-            json+="}";
+            json = t;
+            if (f) json += "[";
+            json += "]";
+            json += "}";
             System.out.println(json);
 
-            PrintWriter printWriter  = null;
+            PrintWriter printWriter = null;
             try {
-                printWriter = new PrintWriter(new File(path+".json"));
+                printWriter = new PrintWriter(new File(path + ".json"));
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -913,273 +1137,270 @@ public class MainWindow implements DrawingEngine {
         }
 
     }
+
     @Override
     public void load(String path) {
 
-        LinkedList<Shape> temps =new LinkedList<>();
-        if(path.contains(".xml"))
-        if(false)
-       try {
-
-
-            File inputFile = new File(path);
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder dBuilder = null;
+        LinkedList<Shape> temps = new LinkedList<>();
+        if (path.contains(".xml")) {
             try {
-                dBuilder = dbFactory.newDocumentBuilder();
-            } catch (ParserConfigurationException ex) {
-                ex.printStackTrace();
-            }
-            Document doc = null;
-            try {
-                doc = dBuilder.parse(inputFile);
-            } catch (SAXException ex) {
-                ex.printStackTrace();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            doc.getDocumentElement().normalize();
-            // System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
-            NodeList nList = doc.getElementsByTagName("Circle");
-            for (int temp = 0; temp < nList.getLength(); temp++) {
-                Node nNode = nList.item(temp);
-                System.out.println("\nCurrent Element :" + nNode.getNodeName());
-                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element eElement = (Element) nNode;
-
-                    int x = (int)Double.parseDouble(eElement.getAttribute("x"));
-                    int y = (int)Double.parseDouble(eElement.getAttribute("y"));
-//                    int cx = (int)Double.parseDouble(eElement.getAttribute("cx"));
-//                    int cy = (int)Double.parseDouble(eElement.getAttribute("cy"));
-                    int r = (int)Double.parseDouble(eElement.getAttribute("r"));
-                    System.out.println(x);
-                    Color color = Color.BLACK;
-                    Color colorBACK = new Color(0, 0, 0, 0);
-                    if (!eElement.getAttribute("color").equals("")) {
-                        // System.out.println("color :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("color").split(",");
-                        if (c.length == 3)
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-
-                    }
-                    if (eElement.getAttribute("fillcolor") != "") {
-                        //System.out.println("fillcolor :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("fillcolor").split(",");
-                        if (c.length == 3)
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-                    }
-                    Circle circle = new Circle(new Point(x, y), r, colorBACK, color);
-                    //mainFrame.add(circle);
-                    temps.add(circle);
-                }
-            }
-
-            nList = doc.getElementsByTagName("Square");
-            for (int temp = 0; temp < nList.getLength(); temp++) {
-                Node nNode = nList.item(temp);
-                System.out.println("\nCurrent Element :" + nNode.getNodeName());
-                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element eElement = (Element) nNode;
-                    int x = (int)Double.parseDouble(eElement.getAttribute("headX"));
-                    int y = (int)Double.parseDouble(eElement.getAttribute("headY"));
-                    int cx = (int)Double.parseDouble(eElement.getAttribute("courserX"));
-                    int cy = (int)Double.parseDouble(eElement.getAttribute("courserY"));
-                    Color color = Color.BLACK;
-                    Color colorBACK = new Color(0, 0, 0, 0);
-                    if (eElement.getAttribute("color") != "") {
-                        // System.out.println("color :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("color").split(",");
-                        if (c.length == 3)
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-
-                    }
-                    if (eElement.getAttribute("fillcolor") != "") {
-                        //System.out.println("fillcolor :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("fillcolor").split(",");
-                        if (c.length == 3)
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-                    }
-                    Square square = new Square(new Point(x, y), new Point(cx, cy), colorBACK, color);
-                    //mainFrame.add(circle);
-                    temps.add(square);
-                }
-            }
 
 
-
-            nList = doc.getElementsByTagName("Rectangle");
-            for (int temp = 0; temp < nList.getLength(); temp++) {
-                Node nNode = nList.item(temp);
-                System.out.println("\nCurrent Element :" + nNode.getNodeName());
-                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element eElement = (Element) nNode;
-                    int x = (int)Double.parseDouble(eElement.getAttribute("headX"));
-                    int y = (int)Double.parseDouble(eElement.getAttribute("headY"));
-                    int cx = (int)Double.parseDouble(eElement.getAttribute("courserX"));
-                    int cy = (int)Double.parseDouble(eElement.getAttribute("courserY"));
-                    Color color = Color.BLACK;
-                    Color colorBACK = new Color(0, 0, 0, 0);
-                    if (eElement.getAttribute("color") != "") {
-                        System.out.println(eElement.getAttribute("color"));
-                        // System.out.println("color :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("color").split(",");
-                        if (c.length == 3)
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-
-                    }
-                    if (eElement.getAttribute("fillcolor") != "") {
-                        //System.out.println("fillcolor :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("fillcolor").split(",");
-                        if (c.length == 3)
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-                    }
-                    Rectangle rectangle = new Rectangle(new Point(x, y), new Point(cx, cy), colorBACK, color);
-                    //mainFrame.add(circle);
-                    temps.add(rectangle);
-                }
-            }
-            nList = doc.getElementsByTagName("Oval");
-            for (int temp = 0; temp < nList.getLength(); temp++) {
-                Node nNode = nList.item(temp);
-                System.out.println("\nCurrent Element :" + nNode.getNodeName());
-                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element eElement = (Element) nNode;
-                    int x = (int)Double.parseDouble(eElement.getAttribute("headX"));
-                    int y = (int)Double.parseDouble(eElement.getAttribute("headY"));
-                    int cx = (int)Double.parseDouble(eElement.getAttribute("courserX"));
-                    int cy = (int)Double.parseDouble(eElement.getAttribute("courserY"));
-                    Color color = Color.BLACK;
-                    Color colorBACK = new Color(0, 0, 0, 0);
-                    if (eElement.getAttribute("color") != "") {
-                        // System.out.println("color :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("color").split(",");
-                        if (c.length == 3)
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-
-                    }
-                    if (eElement.getAttribute("fillcolor") != "") {
-                        //System.out.println("fillcolor :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("fillcolor").split(",");
-                        if (c.length == 3)
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-                    }
-                    Oval oval = new Oval(new Point(x, y), new Point(cx, cy), colorBACK, color);
-                    //mainFrame.add(circle);
-                    temps.add(oval);
-                }
-            }
-
-            nList = doc.getElementsByTagName("Line");
-            for (int temp = 0; temp < nList.getLength(); temp++) {
-                Node nNode = nList.item(temp);
-                System.out.println("\nCurrent Element :" + nNode.getNodeName());
-                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element eElement = (Element) nNode;
-                    int x = (int)Double.parseDouble(eElement.getAttribute("point1x"));
-                    int y = (int)Double.parseDouble(eElement.getAttribute("point1y"));
-                    int cx = (int)Double.parseDouble(eElement.getAttribute("point2x"));
-                    int cy = (int)Double.parseDouble(eElement.getAttribute("point2y"));
-                    Color color = Color.BLACK;
-                    Color colorBACK = new Color(0, 0, 0, 0);
-                    if (eElement.getAttribute("color") != "") {
-                        // System.out.println("color :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("color").split(",");
-                        if (c.length == 3)
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-
-                    }
-                    if (eElement.getAttribute("fillcolor") != "") {
-                        //System.out.println("fillcolor :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("fillcolor").split(",");
-                        if (c.length == 3)
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-                    }
-                    Line line = new Line(new Point(x, y), new Point(cx, cy), color, colorBACK);
-                    //mainFrame.add(circle);
-                    temps.add(line);
-                }
-            }
-            nList = doc.getElementsByTagName("Triangle");
-            for (int temp = 0; temp < nList.getLength(); temp++) {
-                Node nNode = nList.item(temp);
-                System.out.println("\nCurrent Element :" + nNode.getNodeName());
-                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element eElement = (Element) nNode;
-                    int x = (int)Double.parseDouble(eElement.getAttribute("point1x"));
-                    int y = (int)Double.parseDouble(eElement.getAttribute("point1y"));
-                    int cx = (int)Double.parseDouble(eElement.getAttribute("point2x"));
-                    int cy = (int)Double.parseDouble(eElement.getAttribute("point2y"));
-                    int cx3 = (int)Double.parseDouble(eElement.getAttribute("point3x"));
-                    int cy3 = (int)Double.parseDouble(eElement.getAttribute("point3y"));
-
-                    Color color = Color.BLACK;
-                    Color colorBACK = new Color(0, 0, 0, 0);
-                    if (eElement.getAttribute("color") != "") {
-                        // System.out.println("color :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("color").split(",");
-                        if (c.length == 3)
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-                    }
-                    if (eElement.getAttribute("fillcolor") != "") {
-                        //System.out.println("fillcolor :" + eElement.getAttribute("color"));
-                        String[] c = eElement.getAttribute("fillcolor").split(",");
-                        if (c.length == 3)
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
-                        else
-                            colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
-                    }
-                    Triangle triangle = new Triangle(new Point(x, y), new Point(cx, cy), new Point(cx3, cy3), color, colorBACK);
-                    //mainFrame.add(circle);
-                    temps.add(triangle);
-                }
-            }
-            deleteAll();
-             shapes=temps;
-            for(Shape s :temps){
+                File inputFile = new File(path);
+                DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder dBuilder = null;
                 try {
-                    System.out.println(s.getProperties());
-                    s.clone();
-                } catch (CloneNotSupportedException e) {
-                    e.printStackTrace();
+                    dBuilder = dbFactory.newDocumentBuilder();
+                } catch (ParserConfigurationException ex) {
+                    ex.printStackTrace();
                 }
-                MainWindow.mainFrame.setVisible(true);
-                MainWindow.mainFrame.repaint();
-            }
-        }catch (Exception e){
-            JOptionPane.showMessageDialog(mainFrame, "file is Not allowed");
-        }
-        else {
-             try{
+                Document doc = null;
+                try {
+                    doc = dBuilder.parse(inputFile);
+                } catch (SAXException ex) {
+                    ex.printStackTrace();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                doc.getDocumentElement().normalize();
+                // System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+                NodeList nList = doc.getElementsByTagName("Circle");
+                for (int temp = 0; temp < nList.getLength(); temp++) {
+                    Node nNode = nList.item(temp);
+                    System.out.println("\nCurrent Element :" + nNode.getNodeName());
+                    if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                        Element eElement = (Element) nNode;
 
-            String data="";
+                        int x = (int) Double.parseDouble(eElement.getAttribute("x"));
+                        int y = (int) Double.parseDouble(eElement.getAttribute("y"));
+                        int r = (int) Double.parseDouble(eElement.getAttribute("r"));
+                        System.out.println(x);
+                        Color color = Color.BLACK;
+                        Color colorBACK = new Color(0, 0, 0, 0);
+                        if (!eElement.getAttribute("color").equals("")) {
+                            // System.out.println("color :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("color").split(",");
+                            if (c.length == 3)
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+
+                        }
+                        if (eElement.getAttribute("fillcolor") != "") {
+                            //System.out.println("fillcolor :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("fillcolor").split(",");
+                            if (c.length == 3)
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+                        }
+                        Circle circle = new Circle(new Point(x, y), r, colorBACK, color);
+                        //mainFrame.add(circle);
+                        temps.add(circle);
+                    }
+                }
+
+                nList = doc.getElementsByTagName("Square");
+                for (int temp = 0; temp < nList.getLength(); temp++) {
+                    Node nNode = nList.item(temp);
+                    System.out.println("\nCurrent Element :" + nNode.getNodeName());
+                    if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                        Element eElement = (Element) nNode;
+                        int x = (int) Double.parseDouble(eElement.getAttribute("headX"));
+                        int y = (int) Double.parseDouble(eElement.getAttribute("headY"));
+                        int cx = (int) Double.parseDouble(eElement.getAttribute("courserX"));
+                        int cy = (int) Double.parseDouble(eElement.getAttribute("courserY"));
+                        Color color = Color.BLACK;
+                        Color colorBACK = new Color(0, 0, 0, 0);
+                        if (eElement.getAttribute("color") != "") {
+                            // System.out.println("color :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("color").split(",");
+                            if (c.length == 3)
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+
+                        }
+                        if (eElement.getAttribute("fillcolor") != "") {
+                            //System.out.println("fillcolor :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("fillcolor").split(",");
+                            if (c.length == 3)
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+                        }
+                        Square square = new Square(new Point(x, y), new Point(cx, cy), colorBACK, color);
+                        //mainFrame.add(circle);
+                        temps.add(square);
+                    }
+                }
+
+
+                nList = doc.getElementsByTagName("Rectangle");
+                for (int temp = 0; temp < nList.getLength(); temp++) {
+                    Node nNode = nList.item(temp);
+                    System.out.println("\nCurrent Element :" + nNode.getNodeName());
+                    if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                        Element eElement = (Element) nNode;
+                        int x = (int) Double.parseDouble(eElement.getAttribute("headX"));
+                        int y = (int) Double.parseDouble(eElement.getAttribute("headY"));
+                        int cx = (int) Double.parseDouble(eElement.getAttribute("courserX"));
+                        int cy = (int) Double.parseDouble(eElement.getAttribute("courserY"));
+                        Color color = Color.BLACK;
+                        Color colorBACK = new Color(0, 0, 0, 0);
+                        if (eElement.getAttribute("color") != "") {
+                            System.out.println(eElement.getAttribute("color"));
+                            // System.out.println("color :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("color").split(",");
+                            if (c.length == 3)
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+
+                        }
+                        if (eElement.getAttribute("fillcolor") != "") {
+                            //System.out.println("fillcolor :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("fillcolor").split(",");
+                            if (c.length == 3)
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+                        }
+                        Rectangle rectangle = new Rectangle(new Point(x, y), new Point(cx, cy), colorBACK, color);
+                        //mainFrame.add(circle);
+                        temps.add(rectangle);
+                    }
+                }
+                nList = doc.getElementsByTagName("Oval");
+                for (int temp = 0; temp < nList.getLength(); temp++) {
+                    Node nNode = nList.item(temp);
+                    System.out.println("\nCurrent Element :" + nNode.getNodeName());
+                    if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                        Element eElement = (Element) nNode;
+                        int x = (int) Double.parseDouble(eElement.getAttribute("headX"));
+                        int y = (int) Double.parseDouble(eElement.getAttribute("headY"));
+                        int cx = (int) Double.parseDouble(eElement.getAttribute("courserX"));
+                        int cy = (int) Double.parseDouble(eElement.getAttribute("courserY"));
+                        Color color = Color.BLACK;
+                        Color colorBACK = new Color(0, 0, 0, 0);
+                        if (eElement.getAttribute("color") != "") {
+                            // System.out.println("color :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("color").split(",");
+                            if (c.length == 3)
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+
+                        }
+                        if (eElement.getAttribute("fillcolor") != "") {
+                            //System.out.println("fillcolor :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("fillcolor").split(",");
+                            if (c.length == 3)
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+                        }
+                        Oval oval = new Oval(new Point(x, y), new Point(cx, cy), colorBACK, color);
+                        //mainFrame.add(circle);
+                        temps.add(oval);
+                    }
+                }
+
+                nList = doc.getElementsByTagName("Line");
+                for (int temp = 0; temp < nList.getLength(); temp++) {
+                    Node nNode = nList.item(temp);
+                    System.out.println("\nCurrent Element :" + nNode.getNodeName());
+                    if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                        Element eElement = (Element) nNode;
+                        int x = (int) Double.parseDouble(eElement.getAttribute("point1x"));
+                        int y = (int) Double.parseDouble(eElement.getAttribute("point1y"));
+                        int cx = (int) Double.parseDouble(eElement.getAttribute("point2x"));
+                        int cy = (int) Double.parseDouble(eElement.getAttribute("point2y"));
+                        Color color = Color.BLACK;
+                        Color colorBACK = new Color(0, 0, 0, 0);
+                        if (eElement.getAttribute("color") != "") {
+                            // System.out.println("color :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("color").split(",");
+                            if (c.length == 3)
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+
+                        }
+                        if (eElement.getAttribute("fillcolor") != "") {
+                            //System.out.println("fillcolor :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("fillcolor").split(",");
+                            if (c.length == 3)
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+                        }
+                        Line line = new Line(new Point(x, y), new Point(cx, cy), color, colorBACK);
+                        //mainFrame.add(circle);
+                        temps.add(line);
+                    }
+                }
+                nList = doc.getElementsByTagName("Triangle");
+                for (int temp = 0; temp < nList.getLength(); temp++) {
+                    Node nNode = nList.item(temp);
+                    System.out.println("\nCurrent Element :" + nNode.getNodeName());
+                    if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                        Element eElement = (Element) nNode;
+                        int x = (int) Double.parseDouble(eElement.getAttribute("point1x"));
+                        int y = (int) Double.parseDouble(eElement.getAttribute("point1y"));
+                        int cx = (int) Double.parseDouble(eElement.getAttribute("point2x"));
+                        int cy = (int) Double.parseDouble(eElement.getAttribute("point2y"));
+                        int cx3 = (int) Double.parseDouble(eElement.getAttribute("point3x"));
+                        int cy3 = (int) Double.parseDouble(eElement.getAttribute("point3y"));
+
+                        Color color = Color.BLACK;
+                        Color colorBACK = new Color(0, 0, 0, 0);
+                        if (eElement.getAttribute("color") != "") {
+                            // System.out.println("color :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("color").split(",");
+                            if (c.length == 3)
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                color = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+                        }
+                        if (eElement.getAttribute("fillcolor") != "") {
+                            //System.out.println("fillcolor :" + eElement.getAttribute("color"));
+                            String[] c = eElement.getAttribute("fillcolor").split(",");
+                            if (c.length == 3)
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]));
+                            else
+                                colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
+                        }
+                        Triangle triangle = new Triangle(new Point(x, y), new Point(cx, cy), new Point(cx3, cy3), color, colorBACK);
+                        //mainFrame.add(circle);
+                        temps.add(triangle);
+                    }
+                }
+                deleteAll();
+                shapes = temps;
+                for (Shape s : temps) {
+                    try {
+                        System.out.println(s.getProperties());
+                        s.clone();
+                    } catch (CloneNotSupportedException e) {
+                        e.printStackTrace();
+                    }
+                    MainWindow.mainFrame.setVisible(true);
+                    MainWindow.mainFrame.repaint();
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(mainFrame, "file is Not allowed");
+            }
+        } else {
+            //try{
+
+            String data = "";
             try {
-                 data = new String(Files.readAllBytes(Paths.get(path)));
+                data = new String(Files.readAllBytes(Paths.get(path)));
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(!path.contains(".json"))throw new Exception();
+            //  if(!path.contains(".json"))throw new Exception();
             String aa[] = data.split("\\[");
             System.out.println(data);
             for (int i = 1; i < aa.length; i++) {
@@ -1187,234 +1408,228 @@ public class MainWindow implements DrawingEngine {
                     String x = aa[i];
                     String o[] = x.split("\\{");
                     for (int j = 1; j < o.length; j++) {
-                        System.out.println("e"+o[j]);
+                        System.out.println("e" + o[j]);
                         String e = o[j];
                         String[] g = e.split(":");
                         int xx = 0, yy = 0, rr = 0;
                         xx = (int) Double.parseDouble(g[1].split(",")[0]);
                         yy = (int) Double.parseDouble(g[2].split(",")[0]);
-                        rr = (int) Double.parseDouble(g[3].split(",")[0]);
+                        rr = (int) Double.parseDouble(g[3].split(",|\\}|\\]")[0]);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if(g.length!=3){
-                            String h[]=g[4].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
+                        if (g.length > 5) {
+                            String h[] = g[4].split("\\\"")[1].split(",");
+                            if (h.length == 3) { // R G B
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                            } else {
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
                         }
-                        if(g.length!=4){
-                            String h[]=g[5].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
+                        if (g.length > 6) {
+                            String h[] = g[5].split("\\\"")[1].split(",");
+                            if (h.length == 3) { // R G B
+                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                            } else {
+                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
                         }
-                        temps.add(new Circle(new Point(xx,yy),rr,colorBACK,color));
-                        System.out.println(xx + " " + yy + " " + rr+ " "+color+" "+colorBACK);
+                        temps.add(new Circle(new Point(xx, yy), rr, colorBACK, color));
+                        System.out.println(xx + " " + yy + " " + rr + " " + color + " " + colorBACK);
                     }
                     System.out.println("------------------------");
 
-                }
-                else if (i == 2) { // squ
+                } else if (i == 2) { // squ
                     String x = aa[i];
                     String o[] = x.split("\\{");
                     for (int j = 1; j < o.length; j++) {
-                        System.out.println("e"+o[j]);
+                        System.out.println("e" + o[j]);
                         String e = o[j];
                         String[] g = e.split(":");
-                        int hx = 0, hy = 0, cx = 0,cy=0;
+                        int hx = 0, hy = 0, cx = 0, cy = 0;
                         hx = (int) Double.parseDouble(g[1].split(",")[0]);
                         hy = (int) Double.parseDouble(g[2].split(",")[0]);
                         cx = (int) Double.parseDouble(g[3].split(",")[0]);
-                        cy = (int) Double.parseDouble(g[4].split(",")[0]);
+                        cy = (int) Double.parseDouble(g[4].split(",|\\]|\\}")[0]);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if(g.length!=4){
-                            String h[]=g[5].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
+                        if (g.length > 6) {
+                            String h[] = g[5].split("\\\"")[1].split(",");
+                            if (h.length == 3) { // R G B
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                            } else {
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
                         }
-                        if(g.length!=5){
-                            String h[]=g[6].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
+                        if (g.length >= 7) {
+                            String h[] = g[6].split("\\\"")[1].split(",");
+                            if (h.length == 3) { // R G B
+                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                            } else {
+                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
                         }
                         //temps.add(new Circle(new Point(xx,yy),rr,colorBACK,color));
-                        temps.add(new Square(new Point(hx,hy),new Point(cx,cy),colorBACK,color));
+                        temps.add(new Square(new Point(hx, hy), new Point(cx, cy), colorBACK, color));
                         System.out.println("square");
-                        System.out.println(hx + " " + hy + " " + cx+ " "+cy+" " +color+" "+colorBACK);
+                        System.out.println(hx + " " + hy + " " + cx + " " + cy + " " + color + " " + colorBACK);
                     }
                     System.out.println("------------------------");
 
-                }
-                else if (i == 3) { // rec
+                } else if (i == 3) { // rec
                     String x = aa[i];
                     String o[] = x.split("\\{");
                     for (int j = 1; j < o.length; j++) {
-                        System.out.println("e"+o[j]);
+                        System.out.println("e" + o[j]);
                         String e = o[j];
                         String[] g = e.split(":");
-                        int hx = 0, hy = 0, cx = 0,cy=0;
+                        int hx = 0, hy = 0, cx = 0, cy = 0;
                         hx = (int) Double.parseDouble(g[1].split(",")[0]);
                         hy = (int) Double.parseDouble(g[2].split(",")[0]);
                         cx = (int) Double.parseDouble(g[3].split(",")[0]);
-                        cy = (int) Double.parseDouble(g[4].split(",")[0]);
+                        cy = (int) Double.parseDouble(g[4].split(",|\\]|\\}")[0]);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if(g.length!=4){
-                            String h[]=g[5].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
+                        if (g.length > 6) {
+                            String h[] = g[5].split("\\\"")[1].split(",");
+                            if (h.length == 3) { // R G B
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                            } else {
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
                         }
-                        if(g.length!=5){
-                            String h[]=g[6].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
+                        if (g.length >= 7) {
+                            String h[] = g[6].split("\\\"")[1].split(",");
+                            if (h.length == 3) { // R G B
+                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                            } else {
+                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
                         }
                         //temps.add(new Circle(new Point(xx,yy),rr,colorBACK,color));
-                        temps.add(new Rectangle(new Point(hx,hy),new Point(cx,cy),colorBACK,color));
+                        temps.add(new Rectangle(new Point(hx, hy), new Point(cx, cy), colorBACK, color));
                         System.out.println("rec");
-                        System.out.println(hx + " " + hy + " " + cx+ " "+cy+" " +color+" "+colorBACK);
+                        System.out.println(hx + " " + hy + " " + cx + " " + cy + " " + color + " " + colorBACK);
                     }
                     System.out.println("------------------------");
 
-                }else if (i == 4) { // oval
+                } else if (i == 4) { // oval
                     String x = aa[i];
                     String o[] = x.split("\\{");
                     for (int j = 1; j < o.length; j++) {
-                        System.out.println("e"+o[j]);
+                        System.out.println("e" + o[j]);
                         String e = o[j];
                         String[] g = e.split(":");
-                        int hx = 0, hy = 0, cx = 0,cy=0;
+                        int hx = 0, hy = 0, cx = 0, cy = 0;
                         hx = (int) Double.parseDouble(g[1].split(",")[0]);
                         hy = (int) Double.parseDouble(g[2].split(",")[0]);
                         cx = (int) Double.parseDouble(g[3].split(",")[0]);
-                        cy = (int) Double.parseDouble(g[4].split(",")[0]);
+                        cy = (int) Double.parseDouble(g[4].split(",|\\]|\\}")[0]);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if(g.length!=4){
-                            String h[]=g[5].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
+                        if (g.length > 6) {
+                            String h[] = g[5].split("\\\"")[1].split(",");
+                            if (h.length == 3) { // R G B
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                            } else {
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
                         }
-                        if(g.length!=5){
-                            String h[]=g[6].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
+                        if (g.length >= 7) {
+                            String h[] = g[6].split("\\\"")[1].split(",");
+                            if (h.length == 3) { // R G B
+                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                            } else {
+                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
                         }
                         //temps.add(new Circle(new Point(xx,yy),rr,colorBACK,color));
-                        temps.add(new Oval(new Point(hx,hy),new Point(cx,cy),colorBACK,color));
+                        temps.add(new Oval(new Point(hx, hy), new Point(cx, cy), colorBACK, color));
                         System.out.println("oval");
-                        System.out.println(hx + " " + hy + " " + cx+ " "+cy+" " +color+" "+colorBACK);
+                        System.out.println(hx + " " + hy + " " + cx + " " + cy + " " + color + " " + colorBACK);
                     }
                     System.out.println("------------------------");
 
-                }else if (i == 5) { // line
+                } else if (i == 5) { // line
                     String x = aa[i];
                     String o[] = x.split("\\{");
                     for (int j = 1; j < o.length; j++) {
-                        System.out.println("e"+o[j]);
+                        System.out.println("e" + o[j]);
                         String e = o[j];
                         String[] g = e.split(":");
-                        int hx = 0, hy = 0, cx = 0,cy=0;
+                        int hx = 0, hy = 0, cx = 0, cy = 0;
                         hx = (int) Double.parseDouble(g[1].split(",")[0]);
                         hy = (int) Double.parseDouble(g[2].split(",")[0]);
                         cx = (int) Double.parseDouble(g[3].split(",")[0]);
-                        cy = (int) Double.parseDouble(g[4].split(",")[0]);
+                        cy = (int) Double.parseDouble(g[4].split(",|\\]|\\}")[0]);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if(g.length!=4){
-                            String h[]=g[5].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
+                        if (g.length >= 6) {
+                            String h[] = g[5].split("\\\"")[1].split(",");
+                            if (h.length == 3) { // R G B
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                            } else {
+                                color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
                         }
 
                         //temps.add(new Circle(new Point(xx,yy),rr,colorBACK,color));
-                        temps.add(new Line(new Point(hx,hy),new Point(cx,cy),colorBACK,color));
+                        temps.add(new Line(new Point(hx, hy), new Point(cx, cy), color, colorBACK));
                         System.out.println("Line");
-                        System.out.println(hx + " " + hy + " " + cx+ " "+cy+" " +color+" "+colorBACK);
+                        System.out.println(hx + " " + hy + " " + cx + " " + cy + " " + color + " " + colorBACK);
                     }
                     System.out.println("------------------------");
 
-                }else if (i == 6) { // triangle
+                } else if (i == 6) { // triangle
                     String x = aa[i];
                     String o[] = x.split("\\{");
                     for (int j = 1; j < o.length; j++) {
-                        System.out.println("e"+o[j]);
+                        System.out.println("e" + o[j]);
                         String e = o[j];
                         String[] g = e.split(":");
-                        int hx = 0, hy = 0, cx = 0,cy=0,cxx=0,cyy=0;
+                        int hx = 0, hy = 0, cx = 0, cy = 0, cxx = 0, cyy = 0;
                         hx = (int) Double.parseDouble(g[1].split(",")[0]);
                         hy = (int) Double.parseDouble(g[2].split(",")[0]);
                         cx = (int) Double.parseDouble(g[3].split(",")[0]);
                         cy = (int) Double.parseDouble(g[4].split(",")[0]);
                         cxx = (int) Double.parseDouble(g[5].split(",")[0]);
-                        cyy= (int) Double.parseDouble(g[6].split(",")[0]);
+                        cyy = (int) Double.parseDouble(g[6].split(",|\\}|\\]")[0]);
 
-                        Color color = Color.BLACK;
+                        Color color = Color.green;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if(g.length!=6){
-                            String h[]=g[7].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                color=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
-
-                            }
-                        }
-                        if(g.length!=7){
-                            String h[]=g[8].split("\\\"")[1].split(",");
-                            if(h.length==3){ // R G B
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]));
-                            }else {
-                                colorBACK=new Color(Integer.parseInt(h[0]),Integer.parseInt(h[1]),Integer.parseInt(h[2]),Integer.parseInt(h[3]));
-
-                            }
+                        if (g.length >= 8) {
+                            String help[] = g[7].split(",");
+                            int aaa = Integer.parseInt(f(help[0]));
+                            int bbb = Integer.parseInt(f(help[1]));
+                            int ccc = Integer.parseInt(f(help[2]));
+                            System.out.println("doe" + ccc);
+                            color = new Color(aaa, bbb, ccc);
+                            String h[] = g[8].split(",");
+                            System.out.println(h[0]);
+                            aaa = Integer.parseInt(f(h[0]));
+                            bbb = Integer.parseInt(f(h[1]));
+                            ccc = Integer.parseInt(f(h[2]));
+                            colorBACK = new Color(aaa, bbb, ccc);
                         }
 
                         //temps.add(new Circle(new Point(xx,yy),rr,colorBACK,color));
-                        temps.add(new Triangle(new Point(hx,hy),new Point(cx,cy),new Point(cxx,cyy),colorBACK,color));
+                        temps.add(new Triangle(new Point(hx, hy), new Point(cx, cy), new Point(cxx, cyy), color, colorBACK));
                         System.out.println("Triangle");
-                        System.out.println(hx + " " + hy + " " + cx+ " "+cy+" " +cxx+" "+cyy+" "+color+" "+colorBACK);
+                        System.out.println(hx + " " + hy + " " + cx + " " + cy + " " + cxx + " " + cyy + " " + color + " " + colorBACK);
                     }
                     System.out.println("------------------------");
 
@@ -1422,12 +1637,12 @@ public class MainWindow implements DrawingEngine {
 
             }
 
-            }catch (Exception e){
-                JOptionPane.showMessageDialog(mainFrame, "file is Not allowed");
-            }
+//                }catch (Exception e){
+//                    JOptionPane.showMessageDialog(mainFrame, "file is Not allowed");
+//                }
             deleteAll();
-            shapes=temps;
-            for(Shape s :temps){
+            shapes = temps;
+            for (Shape s : temps) {
                 try {
                     System.out.println(s.getProperties());
                     s.clone();
@@ -1436,60 +1651,65 @@ public class MainWindow implements DrawingEngine {
                 }
                 MainWindow.mainFrame.setVisible(true);
                 MainWindow.mainFrame.repaint();
-            }
 
+            }
         }
         return;
     }
 
     private void deleteAll() {
         System.out.println(shapes.size());
-        for(Shape s:shapes){
-            if(s instanceof Circle){
+        for (Shape s : shapes) {
+            if (s instanceof Circle) {
                 try {
-                    ((Circle)s).remove();
-                }catch (Exception e){
-                    mainFrame.remove((Component)s);
+                    ((Circle) s).remove();
+                } catch (Exception e) {
+                    mainFrame.remove((Component) s);
                 }
-            }
-            else if(s instanceof Square){
+            } else if (s instanceof Square) {
                 try {
-                    ((Square)s).remove();
-                }catch (Exception e){
-                    mainFrame.remove((Component)s);
+                    ((Square) s).remove();
+                } catch (Exception e) {
+                    mainFrame.remove((Component) s);
                 }
-            }
-            else if(s instanceof Rectangle){
+            } else if (s instanceof Rectangle) {
                 try {
-                    ((Rectangle)s).remove();
-                }catch (Exception e){
-                    mainFrame.remove((Component)s);
+                    ((Rectangle) s).remove();
+                } catch (Exception e) {
+                    mainFrame.remove((Component) s);
                 }
-            }
-            else if(s instanceof Oval){
+            } else if (s instanceof Oval) {
                 try {
-                    ((Oval)s).remove();
-                }catch (Exception e){
-                    mainFrame.remove((Component)s);
+                    ((Oval) s).remove();
+                } catch (Exception e) {
+                    mainFrame.remove((Component) s);
                 }
-            }
-            else if(s instanceof Triangle){
+            } else if (s instanceof Triangle) {
                 try {
-                    ((Triangle)s).remove();
-                }catch (Exception e){
-                    mainFrame.remove((Component)s);
+                    ((Triangle) s).remove();
+                } catch (Exception e) {
+                    mainFrame.remove((Component) s);
                 }
-            }
-            else if(s instanceof Line){
+            } else if (s instanceof Line) {
                 try {
-                    ((Line)s).remove();
-                }catch (Exception e){
-                    mainFrame.remove((Component)s);
+                    ((Line) s).remove();
+                } catch (Exception e) {
+                    mainFrame.remove((Component) s);
                 }
             }
 
         }
 
     }
-}
 
+    String f(String xx) {
+        String r = "";
+        for (int i = 0; i < xx.length(); i++) {
+            if (xx.charAt(i) >= '0' && xx.charAt(i) <= '9') {
+                r += xx.charAt(i);
+            }
+        }
+        return r;
+    }
+
+}

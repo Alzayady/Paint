@@ -32,13 +32,14 @@ public class Square extends JPanel implements Shape, Cloneable {
 
     public Square(Point head, Point courser, Color fillColor, Color fontColor) {
         setMinPoint(head, courser);
-        this.fillColor=fillColor;
-        this.fontColor=fontColor;
+        this.fillColor = fillColor;
+        this.fontColor = fontColor;
     }
+
     public void paint(Graphics g) {
-       if(fontColor!=null) g.setColor(fontColor);
+        if (fontColor != null) g.setColor(fontColor);
         g.drawRect(minX, minY, width, height);
-        if(fillColor!=null) {
+        if (fillColor != null) {
             g.setColor(fillColor);
             g.fillRect(minX + 1, minY + 1, width - 1, height - 1);
         }
@@ -88,7 +89,7 @@ public class Square extends JPanel implements Shape, Cloneable {
                 if (!resizing) shapes.add(square1);
                 mainFrame.setVisible(true);
                 mainFrame.repaint();
-
+                MainWindow.saveToLog();
             }
 
             @Override
@@ -161,12 +162,11 @@ public class Square extends JPanel implements Shape, Cloneable {
             mainFrame.setVisible(true);
             mainFrame.repaint();
         }
-        //shapes.remove(this);
         square = new Square(head, courser, this.fillColor, this.fontColor);
         mainFrame.add(square);
-        //shapes.add(newSquare);
         mainFrame.setVisible(true);
         mainFrame.repaint();
+        MainWindow.saveToLog();
     }
 
     public void resize() {
@@ -215,6 +215,7 @@ public class Square extends JPanel implements Shape, Cloneable {
         mainFrame.add(square);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
+        MainWindow.saveToLog();
     }
 
     @Override
@@ -225,7 +226,9 @@ public class Square extends JPanel implements Shape, Cloneable {
     @Override
     public void setFillColor(Color color) {
         this.fillColor = color;
-        mainFrame.remove(square);
+        if (square != null) {
+            mainFrame.remove(square);
+        }
         square = new Square(head, courser, fillColor, fontColor);
         mainFrame.add(square);
         MainWindow.mainFrame.setVisible(true);
@@ -239,24 +242,29 @@ public class Square extends JPanel implements Shape, Cloneable {
 
     @Override
     public void draw(Graphics canvas) {
-        if (this.head != null && this.courser != null) {
-            this.drawSquare();
-        } else {
-            System.out.println("not enough information to draw the square");
-        }
+        paint(canvas);
     }
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-       // Square cloneSquare = new Square();
-      //  cloneSquare.setProperties(this.getProperties());
-        if(square!=null)mainFrame.remove(square);
-        square=new Square(head,courser,fillColor,fontColor);
+
+        if (square != null) mainFrame.remove(square);
+        square = new Square(head, courser, fillColor, fontColor);
         mainFrame.add(square);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
 
         return square;
+    }
+
+    // returns another object of the same class not the same object as the original
+    public Shape copy() {
+        Shape newShape = new Square(head, courser, fillColor, fontColor);
+//        mainFrame.remove((Component) ((Square) (newShape)).getShape());
+        shapes.remove(newShape);
+        MainWindow.mainFrame.setVisible(true);
+        MainWindow.mainFrame.repaint();
+        return newShape;
     }
 
     public void remove() {

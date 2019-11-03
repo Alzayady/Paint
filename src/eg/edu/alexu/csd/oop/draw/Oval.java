@@ -20,7 +20,7 @@ public class Oval extends JPanel implements Shape {
     private int height = 0;
     private int width = 0;
     private int selectedPoint = 0;
-    private Map<String, Double> properties=new HashMap<>();
+    private Map<String, Double> properties = new HashMap<>();
     /*belongs to the change color menu
      */
     private Color fillColor;
@@ -31,9 +31,15 @@ public class Oval extends JPanel implements Shape {
         this.DrawOval();
     }
 
-    int min(int a, int b) { if (a < b) return a;return b; }
+    int min(int a, int b) {
+        if (a < b) return a;
+        return b;
+    }
 
-    int max(int a, int b) { if (a > b) return a;return b; }
+    int max(int a, int b) {
+        if (a > b) return a;
+        return b;
+    }
 
     Oval(Point point1, Point point2, Color fillColor, Color fontColor) {
         this.fontColor = fontColor;
@@ -45,17 +51,18 @@ public class Oval extends JPanel implements Shape {
         height = Math.abs(point1.y - point2.y);
         width = Math.abs(point1.x - point2.x);
     }
+
     Oval(Point point1, Point point2) {
-        this(point1,point2,new Color(0, 0, 0, 0),Color.BLACK);
+        this(point1, point2, new Color(0, 0, 0, 0), Color.BLACK);
     }
 
     public void paint(Graphics g) {
-      if(fontColor!=null)  g.setColor(fontColor);
+        if (fontColor != null) g.setColor(fontColor);
         g.drawOval(point1.x - 6, point1.y - 52, width, height);
-      if(fillColor!=null) {
-          g.setColor(fillColor);
-          g.fillOval(point1.x - 6 + 1, point1.y - 52 + 1, width - 2, height - 2);
-      }
+        if (fillColor != null) {
+            g.setColor(fillColor);
+            g.fillOval(point1.x - 6 + 1, point1.y - 52 + 1, width - 2, height - 2);
+        }
         mainFrame.setVisible(true);
         mainFrame.repaint();
     }
@@ -104,6 +111,7 @@ public class Oval extends JPanel implements Shape {
                 point2 = e.getPoint();
                 CALCDETAILS();
                 shapes.add(O);
+                MainWindow.saveToLog();
             }
         };
         MainWindow.mainFrame.addMouseListener(MainWindow.mouseListener);
@@ -169,6 +177,7 @@ public class Oval extends JPanel implements Shape {
         mainFrame.add(oval);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
+        MainWindow.saveToLog();
     }
 
     @Override
@@ -178,7 +187,7 @@ public class Oval extends JPanel implements Shape {
 
     @Override
     public void setProperties(Map<String, Double> properties) {
-            this.properties=properties;
+        this.properties = properties;
         if (properties.containsKey("headX")) {
             double x = properties.get("headX");
             point1.x = (int) x;
@@ -196,7 +205,7 @@ public class Oval extends JPanel implements Shape {
             point2.y = (int) x;
         }
         mainFrame.remove(oval);
-        oval=new Oval(point1,point2);
+        oval = new Oval(point1, point2);
         mainFrame.add(oval);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
@@ -205,11 +214,11 @@ public class Oval extends JPanel implements Shape {
 
     @Override
     public Map<String, Double> getProperties() {
-        properties=new HashMap<>();
-        properties.put("headX",(double)point1.x);
-        properties.put("headY",(double)point1.y);
-        properties.put("courserX",(double)point2.x);
-        properties.put("courserY",(double)point2.y);
+        properties = new HashMap<>();
+        properties.put("headX", (double) point1.x);
+        properties.put("headY", (double) point1.y);
+        properties.put("courserX", (double) point2.x);
+        properties.put("courserY", (double) point2.y);
         return properties;
     }
 
@@ -221,6 +230,7 @@ public class Oval extends JPanel implements Shape {
         mainFrame.add(oval);
         mainFrame.setVisible(true);
         mainFrame.repaint();
+        MainWindow.saveToLog();
     }
 
     @Override
@@ -231,7 +241,9 @@ public class Oval extends JPanel implements Shape {
     @Override
     public void setFillColor(Color color) {
         this.fillColor = color;
-        mainFrame.remove(oval);
+        if (oval != null){
+            mainFrame.remove(oval);
+        }
         oval = new Oval(point1, point2, fillColor, fontColor);
         mainFrame.add(oval);
         mainFrame.setVisible(true);
@@ -258,6 +270,7 @@ public class Oval extends JPanel implements Shape {
                 MainWindow.mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 MainWindow.mainFrame.removeMouseListener(MainWindow.mouseListener);
                 CALCDETAILS();
+                MainWindow.saveToLog();
             }
 
             @Override
@@ -275,7 +288,7 @@ public class Oval extends JPanel implements Shape {
                     int y = Math.abs(e.getY() - center.y);
                     point1.y = center.y - y;
                     point2.y = center.y + y;
-                    if(oval!=null)mainFrame.remove(oval);
+                    if (oval != null) mainFrame.remove(oval);
                     oval = new Oval(point1, point2, fillColor, fontColor);
                     mainFrame.add(oval);
                     MainWindow.mainFrame.setVisible(true);
@@ -307,13 +320,23 @@ public class Oval extends JPanel implements Shape {
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        if(oval!=null)mainFrame.remove(oval);
-        oval=new Oval(point1,point2,fillColor,fontColor);
+        if (oval != null) mainFrame.remove(oval);
+        oval = new Oval(point1, point2, fillColor, fontColor);
         mainFrame.add(oval);
         CALCDETAILS();
         mainFrame.setVisible(true);
         mainFrame.repaint();
         return oval;
+    }
+
+    // returns another object of the same class not the same object as the original
+    public Shape copy() {
+        Shape newShape = new Oval(point1, point2, fillColor, fontColor);
+//        mainFrame.remove((Component) ((Oval) (newShape)).getShape());
+        shapes.remove(newShape);
+        MainWindow.mainFrame.setVisible(true);
+        MainWindow.mainFrame.repaint();
+        return newShape;
     }
 
     public void remove() {

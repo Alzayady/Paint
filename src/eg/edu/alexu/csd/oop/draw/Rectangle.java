@@ -26,7 +26,7 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
     private Color fillColor;
     private Color fontColor;
 
-    public Rectangle(){
+    public Rectangle() {
 
         this.drawRectangle();
     }
@@ -38,9 +38,9 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
     }
 
     public void paint(Graphics g) {
-       if(fontColor!=null) g.setColor(fontColor);
+        if (fontColor != null) g.setColor(fontColor);
         g.drawRect(minX, minY, width, height);
-        if(fillColor!=null) {
+        if (fillColor != null) {
             g.setColor(fillColor);
             g.fillRect(minX + 1, minY + 1, width - 1, height - 1);
         }
@@ -48,50 +48,59 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
         mainFrame.repaint();
     }
 
-    private void drawRectangle(){
+    private void drawRectangle() {
         MainWindow.mouseMotionListener = new MouseMotionListener() {
             @Override
             public void mouseDragged(MouseEvent e) {
-                if (rectangle != null){
+                if (rectangle != null) {
                     mainFrame.remove(rectangle);
                     mainFrame.setVisible(true);
                     mainFrame.repaint();
                 }
                 courser = new Point(e.getX(), e.getY());
-                System.out.println("Rectangle.mouseDragged  = { x = " + courser.x + " , y = " + courser.y + " }" );
-                rectangle = new Rectangle(head, courser,fillColor,fontColor);
+                System.out.println("Rectangle.mouseDragged  = { x = " + courser.x + " , y = " + courser.y + " }");
+                rectangle = new Rectangle(head, courser, fillColor, fontColor);
                 mainFrame.add(rectangle);
                 mainFrame.setVisible(true);
                 mainFrame.repaint();
             }
+
             @Override
-            public void mouseMoved(MouseEvent e) {}
+            public void mouseMoved(MouseEvent e) {
+            }
         };
         MainWindow.mouseListener = new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
 
             }
+
             @Override
             public void mousePressed(MouseEvent e) {
                 if (resizing) return;
                 head = new Point(e.getX(), e.getY());
                 courser = new Point(e.getX(), e.getY());
-                System.out.println("Rectangle.mousePressed  = { x = " + head.x + " , y = " + head.y + " }" );
+                System.out.println("Rectangle.mousePressed  = { x = " + head.x + " , y = " + head.y + " }");
             }
+
             @Override
             public void mouseReleased(MouseEvent e) {
-                System.out.println("Rectangle.mouseReleased  = { x = " + courser.x + " , y = " + courser.y + " }" );
+                System.out.println("Rectangle.mouseReleased  = { x = " + courser.x + " , y = " + courser.y + " }");
                 mainFrame.removeMouseListener(MainWindow.mouseListener);
                 mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 if (!resizing) shapes.add(rectangle1);
                 mainFrame.setVisible(true);
                 mainFrame.repaint();
+                MainWindow.saveToLog();
             }
+
             @Override
-            public void mouseEntered(MouseEvent e) {}
+            public void mouseEntered(MouseEvent e) {
+            }
+
             @Override
-            public void mouseExited(MouseEvent e) {}
+            public void mouseExited(MouseEvent e) {
+            }
         };
         mainFrame.addMouseMotionListener(MainWindow.mouseMotionListener);
         mainFrame.addMouseListener(MainWindow.mouseListener);
@@ -101,18 +110,18 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
         return rectangle;
     }
 
-    private void setMinPoint(Point head, Point courser){
+    private void setMinPoint(Point head, Point courser) {
         width = Math.abs(head.x - courser.x);
         height = Math.abs(head.y - courser.y);
         Point newHead = new Point(head.x, head.y);
         Point newCourser = new Point(courser.x, courser.y);
-        if ((head.x > courser.x ) && (head.y > courser.y)){
+        if ((head.x > courser.x) && (head.y > courser.y)) {
             newHead = new Point(head.x - width, head.y - height);
             courser = new Point(head.x, head.y);
-        } else if ((head.x < courser.x ) && (head.y > courser.y)){
+        } else if ((head.x < courser.x) && (head.y > courser.y)) {
             newHead = new Point(head.x, head.y - height);
-            newCourser = new Point(head.x - width , head.y + height);
-        } else if ((head.x > courser.x ) && (head.y < courser.y)) {
+            newCourser = new Point(head.x - width, head.y + height);
+        } else if ((head.x > courser.x) && (head.y < courser.y)) {
             newHead = new Point(courser.x, head.y);
             newCourser = new Point(head.x + width, head.y);
         }
@@ -122,18 +131,18 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
         minY = newHead.y - PIXEL_REMOVED_VERTICALLY;
     }
 
-    public boolean coversPoint(Point point){
+    public boolean coversPoint(Point point) {
         point = new Point(point.x - PIXEL_REMOVED_HORIZONTALLY, point.y - PIXEL_REMOVED_VERTICALLY);
         setMinPoint(head, courser);
-        Point center = new Point(minX + width / 2 , minY + height / 2);
-        if ((point.x >= (center.x - width / 2)) && (point.x <= (center.x + width / 2))){
-            if ((point.y >= center.y)){ // the point is down
+        Point center = new Point(minX + width / 2, minY + height / 2);
+        if ((point.x >= (center.x - width / 2)) && (point.x <= (center.x + width / 2))) {
+            if ((point.y >= center.y)) { // the point is down
                 if (Math.abs((minY + height) - point.y) <= PIXEL_ALLOWED_ERROR) return true;
             } else { // the point is up
                 if (Math.abs(minY - point.y) <= PIXEL_ALLOWED_ERROR) return true;
             }
-        } else if ((point.y >= minY) && (point.y <= (minY + height))){
-            if (point.x <= center.x){ // this point is left
+        } else if ((point.y >= minY) && (point.y <= (minY + height))) {
+            if (point.x <= center.x) { // this point is left
                 if (Math.abs(minX - point.x) <= PIXEL_ALLOWED_ERROR) return true;
             } else { // the point is right
                 if (Math.abs((minX + width) - point.x) <= PIXEL_ALLOWED_ERROR) return true;
@@ -142,7 +151,7 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
         return false;
     }
 
-    public void resize(){
+    public void resize() {
         this.resizing = true;
         drawRectangle();
         mainFrame.repaint();
@@ -153,8 +162,8 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
     @Override
     public void setPosition(Point position) {
         this.head = new Point(position.x - width / 2, position.y - height / 2);
-        this.courser = new Point(position.x + width / 2, position.y + height /2);
-        if (rectangle != null){
+        this.courser = new Point(position.x + width / 2, position.y + height / 2);
+        if (rectangle != null) {
             mainFrame.remove(rectangle);
             mainFrame.setVisible(true);
             mainFrame.repaint();
@@ -167,17 +176,18 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
         mainFrame.add(rectangle);
         mainFrame.setVisible(true);
         mainFrame.repaint();
+        MainWindow.saveToLog();
     }
 
     // position is the center
     @Override
     public Point getPosition() {
-        return new Point(this.head.x + width / 2 , this.head.y + height / 2);
+        return new Point(this.head.x + width / 2, this.head.y + height / 2);
     }
 
     @Override
     public void setProperties(Map<String, Double> properties) {
-        for (String name : properties.keySet()){
+        for (String name : properties.keySet()) {
             if (name.equals("headX")) {
                 this.head.x = Integer.parseInt(properties.get(name).toString());
             } else if (name.equals("headY")) {
@@ -204,10 +214,11 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
     public void setColor(Color color) {
         this.fontColor = color;
         mainFrame.remove(rectangle);
-        rectangle=new Rectangle(head,courser,fillColor,fontColor);
+        rectangle = new Rectangle(head, courser, fillColor, fontColor);
         mainFrame.add(rectangle);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
+        MainWindow.saveToLog();
     }
 
     @Override
@@ -218,8 +229,10 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
     @Override
     public void setFillColor(Color color) {
         this.fillColor = color;
-        mainFrame.remove(rectangle);
-        rectangle=new Rectangle(head,courser,fillColor,fontColor);
+        if (rectangle != null) {
+            mainFrame.remove(rectangle);
+        }
+        rectangle = new Rectangle(head, courser, fillColor, fontColor);
         mainFrame.add(rectangle);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
@@ -232,19 +245,27 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
 
     @Override
     public void draw(Graphics canvas) {
-
+paint(canvas);
     }
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-//        Square cloneSquare = new Square();
-//        cloneSquare.setProperties(this.getProperties());
-        if(rectangle!=null)mainFrame.remove(rectangle);
-        rectangle=new Rectangle(head,courser,fillColor,fontColor);
+        if (rectangle != null) mainFrame.remove(rectangle);
+        rectangle = new Rectangle(head, courser, fillColor, fontColor);
         mainFrame.add(rectangle);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
         return rectangle;
+    }
+
+    // returns another object of the same class not the same object as the original
+    public Shape copy() {
+        Shape newShape = new Rectangle(head, courser, fillColor, fontColor);
+//        mainFrame.remove((Component) ((Rectangle) (newShape)).getShape());
+        shapes.remove(newShape);
+        MainWindow.mainFrame.setVisible(true);
+        MainWindow.mainFrame.repaint();
+        return newShape;
     }
 
     public void remove() {

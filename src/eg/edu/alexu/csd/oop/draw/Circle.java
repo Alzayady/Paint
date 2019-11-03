@@ -126,6 +126,7 @@ public class Circle extends JPanel implements Shape {
                 mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 mainFrame.removeMouseListener(MainWindow.mouseListener);
                 r = (int) Math.abs(Math.sqrt(Math.pow((centerX - curserX), 2) + Math.pow((centerY - curserY), 2)));
+                MainWindow.saveToLog();
             }
         };
         mainFrame.addMouseListener(MainWindow.mouseListener);
@@ -153,13 +154,13 @@ public class Circle extends JPanel implements Shape {
         } else {
             mainFrame.remove(this);
         }
-        System.out.println("fff");
         centerX=position.x;
         centerY=position.y;
-       circle = new Circle(new Point(centerX, centerY - 25), r, fillColor, fontColor);
+        circle = new Circle(new Point(centerX, centerY - 25), r, fillColor, fontColor);
         mainFrame.add(circle);
         mainFrame.repaint();
         mainFrame.setVisible(true);
+        MainWindow.saveToLog();
     }
 
 
@@ -203,7 +204,6 @@ public class Circle extends JPanel implements Shape {
         properties.put("x",(double)centerX);
         properties.put("y",(double)centerY);
         properties.put("r",(double)r);
-      //  properties.put("cy",(double)curserY);
         return properties;
     }
 
@@ -215,6 +215,7 @@ public class Circle extends JPanel implements Shape {
         mainFrame.add(circle);
         mainFrame.setVisible(true);
         mainFrame.repaint();
+        MainWindow.saveToLog();
     }
 
     @Override
@@ -228,7 +229,9 @@ public class Circle extends JPanel implements Shape {
     @Override
     public void setFillColor(Color color) {
         this.fillColor = color;
-        mainFrame.remove(circle);
+        if (circle != null){
+            mainFrame.remove(circle);
+        }
         circle = new Circle(new Point(centerX, centerY), r, fillColor, fontColor);
         mainFrame.add(circle);
         mainFrame.setVisible(true);
@@ -241,18 +244,26 @@ public class Circle extends JPanel implements Shape {
     }
 
     @Override
-    public void draw(Graphics canvas) {
+    public void draw(Graphics canvas) {paint(canvas);
     }
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        if(circle!=null)mainFrame.remove(circle);
+        if(circle!=null) mainFrame.remove(circle);
         circle = new Circle(new Point(centerX, centerY - 25),r, fillColor, fontColor);
-
-        //circle = new Circle(new Point(centerX, centerY), r, fillColor, fontColor);
         mainFrame.add(circle);
         mainFrame.setVisible(true);
         mainFrame.repaint();
         return c;
+    }
+
+    // returns another object of the same class not the same object as the original
+    public Shape copy(){
+        Shape newShape = new Circle(new Point(centerX, centerY ),r, fillColor, fontColor);
+//        mainFrame.remove((Component) ((Circle) (newShape)).getShape());
+        shapes.remove(newShape);
+        MainWindow.mainFrame.setVisible(true);
+        MainWindow.mainFrame.repaint();
+        return newShape;
     }
 }

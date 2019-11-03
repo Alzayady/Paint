@@ -17,11 +17,14 @@ public class Triangle implements Shape {
     private final int PIXEL_ALLOWED_ERROR = 3;
     private double s1, s2, s3, c1, c2, c3;
     private Triangle r = this;
-    private Color ccolor ;
+    private Color ccolor =Color.BLACK;
     private Color BBG ;
     private innerTraingle polygon;
     private Point center = new Point();
     private  Map<String, Double> properties=new HashMap<>();
+    private boolean isS1;
+    private boolean isS2;
+    private boolean isS3;
     Triangle() {
         this.DrowTringe();
     }
@@ -32,6 +35,12 @@ public class Triangle implements Shape {
         this.p3 = p3;
         this.ccolor = ccolor;
         this.BBG = BBG;
+        polygon=new innerTraingle(p1,p2,p3,ccolor,BBG);
+    }
+    public Triangle(Point p1, Point p2, Point p3) {
+        this.p1 = p1;
+        this.p2 = p2;
+        this.p3 = p3;
         polygon=new innerTraingle(p1,p2,p3,ccolor,BBG);
     }
 
@@ -116,15 +125,16 @@ public class Triangle implements Shape {
                     MainWindow.mainFrame.setVisible(true);
                     MainWindow.mainFrame.repaint();
                     CURRENTDETALIS();
-                    System.out.println("added");
                     shapes.add(r);
                     MainWindow.mainFrame.removeMouseListener(MainWindow.mouseListener);
                     MainWindow.mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
+                    saveToLog();
                 }
             }
 
             @Override
-            public void mouseReleased(MouseEvent e) { }
+            public void mouseReleased(MouseEvent e) {
+            }
         };
         MainWindow.mainFrame.addMouseListener(MainWindow.mouseListener);
         MainWindow.mainFrame.addMouseMotionListener(MainWindow.mouseMotionListener);
@@ -148,6 +158,8 @@ public class Triangle implements Shape {
         }
         center.x = (p1.x + p2.x + p3.x) / 3;
         center.y = (p1.y + p2.y + p3.y) / 3;
+        mainFrame.removeMouseListener(mouseListener);
+        mainFrame.removeMouseMotionListener(mouseMotionListener);
 
     }
 
@@ -182,7 +194,7 @@ public class Triangle implements Shape {
         }
 
         public void paint(Graphics g) {
-           if(ccolor!=null) g.setColor(ccolor);
+            if(ccolor!=null) g.setColor(ccolor);
             g.drawPolygon(x, y, 3);
 
             if(BBG!=null) {
@@ -261,6 +273,7 @@ public class Triangle implements Shape {
         CURRENTDETALIS();
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
+        saveToLog();
     }
 
     @Override
@@ -281,7 +294,6 @@ public class Triangle implements Shape {
         } else if (distance(p3, point) < distance(p1, point) && distance(p3, point) < distance(p2, point)) {
             type = 3;
         }
-
         s1(type);
     }
 
@@ -300,6 +312,7 @@ public class Triangle implements Shape {
                 CURRENTDETALIS();
                 mainFrame.removeMouseMotionListener(mouseMotionListener);
                 mainFrame.removeMouseListener(mouseListener);
+                saveToLog();
             }
 
             @Override
@@ -350,7 +363,7 @@ public class Triangle implements Shape {
 
     @Override
     public void setProperties(Map<String, Double> properties) {
-     this.properties=properties;
+        this.properties=properties;
         if (properties.containsKey("point1x")) {
             double x = properties.get("point1x");
             p1.x = (int) x;
@@ -405,6 +418,7 @@ public class Triangle implements Shape {
         mainFrame.add(polygon);
         mainFrame.setVisible(true);
         mainFrame.repaint();
+        saveToLog();
     }
 
     @Override
@@ -415,7 +429,9 @@ public class Triangle implements Shape {
     @Override
     public void setFillColor(Color color) {
         BBG = color;
-        mainFrame.remove(polygon);
+        if (polygon != null){
+            mainFrame.remove(polygon);
+        }
         polygon = new innerTraingle(p1, p2, p3, ccolor, BBG);
         mainFrame.add(polygon);
         mainFrame.setVisible(true);
@@ -429,7 +445,7 @@ public class Triangle implements Shape {
 
     @Override
     public void draw(Graphics canvas) {
-       new   innerTraingle(canvas);
+        new   innerTraingle(canvas);
     }
 
     @Override
@@ -441,5 +457,15 @@ public class Triangle implements Shape {
         mainFrame.repaint();
         CURRENTDETALIS();
         return polygon;
+    }
+
+    // returns another object of the same class not the same object as the original
+    public Shape copy() {
+        Shape newShape = new Triangle(p1,p2,p3,ccolor,BBG);
+//        ((Triangle) newShape).remove();
+        shapes.remove(newShape);
+        MainWindow.mainFrame.setVisible(true);
+        MainWindow.mainFrame.repaint();
+        return newShape;
     }
 }
