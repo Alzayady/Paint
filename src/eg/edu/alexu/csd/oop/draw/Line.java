@@ -70,6 +70,7 @@ public class Line extends JPanel implements Shape {
                 line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
                 MainWindow.mainFrame.add(line);
                 MainWindow.mainFrame.setVisible(true);
+                MainWindow.mainFrame.repaint();
             }
 
             @Override
@@ -96,11 +97,11 @@ public class Line extends JPanel implements Shape {
 
             @Override
             public void mouseReleased(MouseEvent e) {
+                CALCDETAILS();
                 shapes.add(line1);
+                MainWindow.saveToLog();
                 MainWindow.mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 MainWindow.mainFrame.removeMouseListener(MainWindow.mouseListener);
-                CALCDETAILS();
-                MainWindow.saveToLog();
             }
         };
         MainWindow.mainFrame.addMouseListener(MainWindow.mouseListener);
@@ -159,6 +160,7 @@ public class Line extends JPanel implements Shape {
         MainWindow.mainFrame.setVisible(true);
         line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
         MainWindow.mainFrame.add(line);
+        CALCDETAILS();
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
         MainWindow.saveToLog();
@@ -196,9 +198,6 @@ public class Line extends JPanel implements Shape {
         mainFrame.repaint();
     }
 
-//    public Shape getShape() {
-//        return line;
-//    }
 
     @Override
     public Map<String, Double> getProperties() {
@@ -216,8 +215,6 @@ public class Line extends JPanel implements Shape {
         this.color = color;
         mainFrame.remove(line);
         line = new Line(point1, point2, color, null);
-
-        System.out.println(color);
         mainFrame.add(line);
         mainFrame.setVisible(true);
         mainFrame.repaint();
@@ -264,9 +261,7 @@ public class Line extends JPanel implements Shape {
 
     // returns another object of the same class not the same object as the original
     public Shape copy() {
-        Shape newShape = new Line(point1, point2);
-//        ((Line) newShape).remove();
-        shapes.remove(newShape);
+        Shape newShape = new Line(point1, point2,color,colorBACK);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
         return newShape;
@@ -275,7 +270,6 @@ public class Line extends JPanel implements Shape {
     public void resize(Point p) {
         if (Math.pow(p.x - point1.x, 2) + Math.pow(p.y - point1.y, 2) < Math.pow(p.x - point2.x, 2) + Math.pow(p.y - point2.y, 2)) {
             selectp2 = true;
-            System.out.println(1);
             selectp2();
         } else {
             selectp2 = false;
@@ -297,10 +291,10 @@ public class Line extends JPanel implements Shape {
 
             @Override
             public void mouseReleased(MouseEvent mouseEvent) {
-                mainFrame.removeMouseListener(MainWindow.mouseListener);
-                mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 CALCDETAILS();
                 if (selectp2) MainWindow.saveToLog();
+                mainFrame.removeMouseListener(MainWindow.mouseListener);
+                mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
             }
 
             @Override
@@ -326,6 +320,7 @@ public class Line extends JPanel implements Shape {
                 line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
                 MainWindow.mainFrame.add(line);
                 MainWindow.mainFrame.setVisible(true);
+                MainWindow.mainFrame.repaint();
 
             }
 
@@ -353,10 +348,10 @@ public class Line extends JPanel implements Shape {
 
             @Override
             public void mouseReleased(MouseEvent mouseEvent) {
-                mainFrame.removeMouseListener(MainWindow.mouseListener);
-                mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 CALCDETAILS();
                 if (!selectp2) MainWindow.saveToLog();
+                mainFrame.removeMouseListener(MainWindow.mouseListener);
+                mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
             }
 
             @Override
@@ -382,6 +377,7 @@ public class Line extends JPanel implements Shape {
                 line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
                 MainWindow.mainFrame.add(line);
                 MainWindow.mainFrame.setVisible(true);
+                MainWindow.mainFrame.repaint();
 
             }
 

@@ -13,9 +13,7 @@ import static org.junit.Assert.*;
 
 public class SmokeTest {
     
-    public static Class<?> getSpecifications(){
-        return DrawingEngine.class;
-    }
+    public static Class<?> getSpecifications(){ return DrawingEngine.class; }
     
     @org.junit.Test
     public void testAddShape() {

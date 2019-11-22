@@ -49,7 +49,6 @@ public class IntegrationTest {
         DrawingEngine instance = (DrawingEngine)TestRunner.getImplementationInstanceForInterface(DrawingEngine.class);
         List<Class<? extends Shape>> supportedShapes = instance.getSupportedShapes();
         assertNotNull("No supported shapes returned, check getSupportedShapes function!", supportedShapes);
-        System.out.println(supportedShapes);
         assertFalse("No supported shapes returned, check getSupportedShapes function!", supportedShapes.isEmpty());
         for(Class<? extends Shape> shapeClass : supportedShapes){
             try {

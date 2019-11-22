@@ -22,9 +22,7 @@ public class Triangle implements Shape {
     private innerTraingle polygon;
     private Point center = new Point();
     private  Map<String, Double> properties=new HashMap<>();
-    private boolean isS1;
-    private boolean isS2;
-    private boolean isS3;
+    private boolean voidFirst=true;
     Triangle() {
         this.DrowTringe();
     }
@@ -129,6 +127,7 @@ public class Triangle implements Shape {
                     MainWindow.mainFrame.removeMouseListener(MainWindow.mouseListener);
                     MainWindow.mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                     saveToLog();
+
                 }
             }
 
@@ -217,16 +216,16 @@ public class Triangle implements Shape {
         }
     }
 
-    public void add(){
-        mainFrame.add(polygon);
-        MainWindow.mainFrame.setVisible(true);
-        MainWindow.mainFrame.repaint();
-    }
+
     public Shape getShape() {
         return r;
     }
 
     public boolean coversPoint(Point point) {
+        if(voidFirst){
+            voidFirst=false;
+            return false;
+        }
         return cover(point, p1, p2, s1, c1) || cover(point, p1, p3, s2, c2) || cover(point, p2, p3, s3, c3);
     }
 
@@ -286,6 +285,10 @@ public class Triangle implements Shape {
     }
 
     public void resize(Point point) {
+        if(voidFirst){
+            voidFirst=false;
+            return;
+        }
         int type = 0;
         if (distance(p1, point) < distance(p2, point) && distance(p1, point) < distance(p3, point)) {
             type = 1;
@@ -462,8 +465,7 @@ public class Triangle implements Shape {
     // returns another object of the same class not the same object as the original
     public Shape copy() {
         Shape newShape = new Triangle(p1,p2,p3,ccolor,BBG);
-//        ((Triangle) newShape).remove();
-        shapes.remove(newShape);
+//        shapes.remove(newShape);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
         return newShape;

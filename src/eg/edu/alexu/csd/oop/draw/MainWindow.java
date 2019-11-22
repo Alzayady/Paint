@@ -134,19 +134,7 @@ public class MainWindow implements DrawingEngine {
                 }
             }
         });
-        JMenuItem resize = new JMenuItem("resize");
-        resize.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand().equals("resize")) {
-                    if (selectedShape != null) {
-                        // code for resize
-                    } else {
-                        JOptionPane.showMessageDialog(mainFrame, "no shape was selected");
-                    }
-                }
-            }
-        });
+
         JMenuItem changeColor = new JMenuItem("change color");
         changeColor.addActionListener(new ActionListener() {
             @Override
@@ -182,11 +170,11 @@ public class MainWindow implements DrawingEngine {
                 }
             }
         });
-        JMenuItem rePosition = new JMenuItem("change position");
+        JMenuItem rePosition = new JMenuItem("Move");
         rePosition.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand().equals("change position")) {
+                if (e.getActionCommand().equals("Move")) {
                     if (selectedShape != null) {
                         JOptionPane.showMessageDialog(mainFrame, "select a new point");
                         mainFrame.removeMouseListener(MouseListenerSelect);
@@ -382,15 +370,7 @@ public class MainWindow implements DrawingEngine {
                 Line line1 = new Line();
             }
         });
-        // new
-        JMenuItem newFile = new JMenuItem("new");
 
-        newFile.addActionListener(e -> {
-            if (e.getActionCommand().equals("new")) {
-                System.out.println("Shapes drawn count = " + shapes.size());
-                mainFrame = new JFrame("Draw");
-            }
-        });
 
         JMenuItem close = new JMenuItem("close");
         close.addActionListener(e -> {
@@ -401,12 +381,11 @@ public class MainWindow implements DrawingEngine {
         fileMenu.add(JSON);
         //fileMenu.add(save);
         fileMenu.add(load);
-        fileMenu.add(newFile);
+       // fileMenu.add(newFile);
         fileMenu.add(close);
         fileMenu.add(undo);
         fileMenu.add(redo);
         editMenu.add(delete);
-        editMenu.add(resize);
         editMenu.add(rePosition);
         editMenu.add(changeColor);
 
@@ -582,21 +561,21 @@ public class MainWindow implements DrawingEngine {
 
     @Override
     public void addShape(Shape shape) {
-shapes.add(shape);
+     shapes.add(shape);
+     saveToLog();
     }
 
     @Override
     public void removeShape(Shape shape) {
-
         shapes.remove(shape);
+        saveToLog();
     }
 
     @Override
     public void updateShape(Shape oldShape, Shape newShape) {
-
         shapes.remove(oldShape);
         shapes.add(newShape);
-
+         saveToLog();
     }
 
     @Override
@@ -660,7 +639,11 @@ shapes.add(shape);
         redoLog.removeFirst();
         // updating the shapes in the mainFrame
         for (Shape shape : shapes) {
-            shape.setFillColor(shape.getFillColor());
+            try {
+                shape.clone();
+            } catch (CloneNotSupportedException e) {
+                e.printStackTrace();
+            }
         }
         selectedShape = null;
         mainFrame.setVisible(true);
@@ -1144,8 +1127,6 @@ shapes.add(shape);
         LinkedList<Shape> temps = new LinkedList<>();
         if (path.contains(".xml")) {
             try {
-
-
                 File inputFile = new File(path);
                 DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder dBuilder = null;
@@ -1194,9 +1175,11 @@ shapes.add(shape);
                             else
                                 colorBACK = new Color(Integer.parseInt(c[0]), Integer.parseInt(c[1]), Integer.parseInt(c[2]), Integer.parseInt(c[3]));
                         }
-                        Circle circle = new Circle(new Point(x, y), r, colorBACK, color);
+                        temps.add(new Circle(new Point(x, y), r, colorBACK, color));
+
+                      //  Circle circle = new Circle(new Point(x-r, y-r), new Point(x+r, y+r), colorBACK, color);
                         //mainFrame.add(circle);
-                        temps.add(circle);
+                        //temps.add(circle);
                     }
                 }
 
@@ -1388,6 +1371,7 @@ shapes.add(shape);
                     MainWindow.mainFrame.setVisible(true);
                     MainWindow.mainFrame.repaint();
                 }
+                saveToLog();
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(mainFrame, "file is Not allowed");
             }
@@ -1418,7 +1402,7 @@ shapes.add(shape);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if (g.length > 5) {
+                        if (e.contains("color")) {
                             String h[] = g[4].split("\\\"")[1].split(",");
                             if (h.length == 3) { // R G B
                                 color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -1426,18 +1410,22 @@ shapes.add(shape);
                                 color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
 
                             }
-                        }
-                        if (g.length > 6) {
-                            String h[] = g[5].split("\\\"")[1].split(",");
+
+
+                            String hh[] = g[5].split("\\\"")[1].split(",");
                             if (h.length == 3) { // R G B
-                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
+                                colorBACK = new Color(Integer.parseInt(hh[0]), Integer.parseInt(hh[1]), Integer.parseInt(hh[2]));
                             } else {
-                                colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]), Integer.parseInt(h[3]));
+                                colorBACK = new Color(Integer.parseInt(hh[0]), Integer.parseInt(hh[1]), Integer.parseInt(hh[2]), Integer.parseInt(hh[3]));
 
                             }
                         }
+                     //   Circle circle = new Circle(new Point(xx, yy), rr, colorBACK, color);
+
                         temps.add(new Circle(new Point(xx, yy), rr, colorBACK, color));
                         System.out.println(xx + " " + yy + " " + rr + " " + color + " " + colorBACK);
+                        System.out.println((xx-rr)+"wwwwwwww"+(yy-rr));
+
                     }
                     System.out.println("------------------------");
 
@@ -1456,7 +1444,7 @@ shapes.add(shape);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if (g.length > 6) {
+                        if (e.contains("color")) {
                             String h[] = g[5].split("\\\"")[1].split(",");
                             if (h.length == 3) { // R G B
                                 color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -1465,7 +1453,7 @@ shapes.add(shape);
 
                             }
                         }
-                        if (g.length >= 7) {
+                        if (e.contains("color")) {
                             String h[] = g[6].split("\\\"")[1].split(",");
                             if (h.length == 3) { // R G B
                                 colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -1496,7 +1484,7 @@ shapes.add(shape);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if (g.length > 6) {
+                        if (e.contains("color")) {
                             String h[] = g[5].split("\\\"")[1].split(",");
                             if (h.length == 3) { // R G B
                                 color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -1505,7 +1493,7 @@ shapes.add(shape);
 
                             }
                         }
-                        if (g.length >= 7) {
+                        if (e.contains("color")) {
                             String h[] = g[6].split("\\\"")[1].split(",");
                             if (h.length == 3) { // R G B
                                 colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -1536,7 +1524,7 @@ shapes.add(shape);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if (g.length > 6) {
+                        if (e.contains("color")) {
                             String h[] = g[5].split("\\\"")[1].split(",");
                             if (h.length == 3) { // R G B
                                 color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -1545,7 +1533,7 @@ shapes.add(shape);
 
                             }
                         }
-                        if (g.length >= 7) {
+                        if (e.contains("color")) {
                             String h[] = g[6].split("\\\"")[1].split(",");
                             if (h.length == 3) { // R G B
                                 colorBACK = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -1576,7 +1564,7 @@ shapes.add(shape);
                         Color color = Color.BLACK;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if (g.length >= 6) {
+                        if (e.contains("color")) {
                             String h[] = g[5].split("\\\"")[1].split(",");
                             if (h.length == 3) { // R G B
                                 color = new Color(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -1611,19 +1599,21 @@ shapes.add(shape);
                         Color color = Color.green;
                         Color colorBACK = new Color(0, 0, 0, 0);
 
-                        if (g.length >= 8) {
+                        if (e.contains("color")) {
                             String help[] = g[7].split(",");
                             int aaa = Integer.parseInt(f(help[0]));
                             int bbb = Integer.parseInt(f(help[1]));
                             int ccc = Integer.parseInt(f(help[2]));
                             System.out.println("doe" + ccc);
                             color = new Color(aaa, bbb, ccc);
-                            String h[] = g[8].split(",");
-                            System.out.println(h[0]);
-                            aaa = Integer.parseInt(f(h[0]));
-                            bbb = Integer.parseInt(f(h[1]));
-                            ccc = Integer.parseInt(f(h[2]));
-                            colorBACK = new Color(aaa, bbb, ccc);
+                            if(e.contains("fill")) {
+                                String h[] = g[8].split(",");
+                                System.out.println(h[0]);
+                                aaa = Integer.parseInt(f(h[0]));
+                                bbb = Integer.parseInt(f(h[1]));
+                                ccc = Integer.parseInt(f(h[2]));
+                                colorBACK = new Color(aaa, bbb, ccc);
+                            }
                         }
 
                         //temps.add(new Circle(new Point(xx,yy),rr,colorBACK,color));
@@ -1651,6 +1641,7 @@ shapes.add(shape);
                 }
                 MainWindow.mainFrame.setVisible(true);
                 MainWindow.mainFrame.repaint();
+                saveToLog();
 
             }
         }

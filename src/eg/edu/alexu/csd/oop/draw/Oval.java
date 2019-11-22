@@ -332,8 +332,6 @@ public class Oval extends JPanel implements Shape {
     // returns another object of the same class not the same object as the original
     public Shape copy() {
         Shape newShape = new Oval(point1, point2, fillColor, fontColor);
-//        mainFrame.remove((Component) ((Oval) (newShape)).getShape());
-        shapes.remove(newShape);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
         return newShape;

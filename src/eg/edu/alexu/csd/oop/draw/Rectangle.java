@@ -167,10 +167,6 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
             mainFrame.remove(rectangle);
             mainFrame.setVisible(true);
             mainFrame.repaint();
-        } else {
-            mainFrame.remove(this);
-            mainFrame.setVisible(true);
-            mainFrame.repaint();
         }
         rectangle = new Rectangle(head, courser, fillColor, fontColor);
         mainFrame.add(rectangle);
@@ -251,6 +247,8 @@ paint(canvas);
     @Override
     public Object clone() throws CloneNotSupportedException {
         if (rectangle != null) mainFrame.remove(rectangle);
+        MainWindow.mainFrame.setVisible(true);
+        MainWindow.mainFrame.repaint();
         rectangle = new Rectangle(head, courser, fillColor, fontColor);
         mainFrame.add(rectangle);
         MainWindow.mainFrame.setVisible(true);
@@ -261,8 +259,6 @@ paint(canvas);
     // returns another object of the same class not the same object as the original
     public Shape copy() {
         Shape newShape = new Rectangle(head, courser, fillColor, fontColor);
-//        mainFrame.remove((Component) ((Rectangle) (newShape)).getShape());
-        shapes.remove(newShape);
         MainWindow.mainFrame.setVisible(true);
         MainWindow.mainFrame.repaint();
         return newShape;
