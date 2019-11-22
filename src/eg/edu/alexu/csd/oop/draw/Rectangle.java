@@ -49,6 +49,7 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
     }
 
     private void drawRectangle() {
+         boolean[] change = {false};
         MainWindow.mouseMotionListener = new MouseMotionListener() {
             @Override
             public void mouseDragged(MouseEvent e) {
@@ -57,6 +58,7 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
                     mainFrame.setVisible(true);
                     mainFrame.repaint();
                 }
+                change[0] =true;
                 courser = new Point(e.getX(), e.getY());
                 System.out.println("Rectangle.mouseDragged  = { x = " + courser.x + " , y = " + courser.y + " }");
                 rectangle = new Rectangle(head, courser, fillColor, fontColor);
@@ -85,13 +87,14 @@ public class Rectangle extends JPanel implements Shape, Cloneable {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                System.out.println("Rectangle.mouseReleased  = { x = " + courser.x + " , y = " + courser.y + " }");
-                mainFrame.removeMouseListener(MainWindow.mouseListener);
-                mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 if (!resizing) shapes.add(rectangle1);
                 mainFrame.setVisible(true);
                 mainFrame.repaint();
-                MainWindow.saveToLog();
+               if(change[0]) MainWindow.saveToLog();
+
+                System.out.println("Rectangle.mouseReleased  = { x = " + courser.x + " , y = " + courser.y + " }");
+                mainFrame.removeMouseListener(MainWindow.mouseListener);
+                mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
             }
 
             @Override

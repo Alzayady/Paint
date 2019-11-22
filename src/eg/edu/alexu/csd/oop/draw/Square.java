@@ -47,6 +47,7 @@ public class Square extends JPanel implements Shape, Cloneable {
     }
 
     private void drawSquare() {
+         boolean[] change = {false};
         MainWindow.mouseMotionListener = new MouseMotionListener() {
             @Override
             public void mouseDragged(MouseEvent e) {
@@ -55,6 +56,7 @@ public class Square extends JPanel implements Shape, Cloneable {
                     mainFrame.repaint();
                     mainFrame.setVisible(true);
                 }
+                change[0] =true;
                 courser = new Point(e.getX(), e.getY());
                 System.out.println("Square.mouseDragged  = { x = " + courser.x + " , y = " + courser.y + " }");
                 square = new Square(head, courser, fillColor, fontColor);
@@ -83,13 +85,14 @@ public class Square extends JPanel implements Shape, Cloneable {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                System.out.println("Square.mouseReleased  = { x = " + courser.x + " , y = " + courser.y + " }");
-                mainFrame.removeMouseListener(MainWindow.mouseListener);
-                mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 if (!resizing) shapes.add(square1);
                 mainFrame.setVisible(true);
                 mainFrame.repaint();
-                MainWindow.saveToLog();
+                if(change[0]) MainWindow.saveToLog();
+
+                System.out.println("Square.mouseReleased  = { x = " + courser.x + " , y = " + courser.y + " }");
+                mainFrame.removeMouseListener(MainWindow.mouseListener);
+                mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
             }
 
             @Override

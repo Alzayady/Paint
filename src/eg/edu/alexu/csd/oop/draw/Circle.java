@@ -213,14 +213,14 @@ public class Circle extends JPanel implements Shape  {
         mainFrame.repaint();
         circle=new Circle(new Point(centerX,centerY-25), r, fillColor, fontColor);
         mainFrame.add(circle);
-
         mainFrame.setVisible(true);
         mainFrame.repaint();
-     return circle;
+        return circle;
     }
 
 
     public void resize() {
+         boolean[] change = {false};
         MainWindow.mouseMotionListener = new MouseMotionListener() {
             @Override
             public void mouseDragged(MouseEvent e) {
@@ -229,6 +229,7 @@ public class Circle extends JPanel implements Shape  {
                     mainFrame.repaint();
                     mainFrame.setVisible(true);
                 }
+                change[0] =true;
                 curserX = e.getX();
                 curserY = e.getY();
                 circle = new Circle(new Point(centerX, centerY - 25), new Point(curserX, curserY - 25),fillColor,fontColor);
@@ -261,7 +262,7 @@ public class Circle extends JPanel implements Shape  {
             @Override
             public void mouseReleased(MouseEvent e) {
                 r=(int)Math.abs(Math.sqrt(Math.pow((centerX - curserX), 2) + Math.pow((centerY - curserY), 2)));
-                saveToLog();
+                if(change[0])saveToLog();
                 mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
                 mainFrame.removeMouseListener(MainWindow.mouseListener);
             }

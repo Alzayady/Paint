@@ -278,6 +278,7 @@ public class Line extends JPanel implements Shape {
     }
 
     private void selectp2() {
+         boolean[] change = {false};
         MainWindow.mouseListener = new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent mouseEvent) {
@@ -292,7 +293,7 @@ public class Line extends JPanel implements Shape {
             @Override
             public void mouseReleased(MouseEvent mouseEvent) {
                 CALCDETAILS();
-                if (selectp2) MainWindow.saveToLog();
+                if (selectp2&& change[0]) MainWindow.saveToLog();
                 mainFrame.removeMouseListener(MainWindow.mouseListener);
                 mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
             }
@@ -316,6 +317,7 @@ public class Line extends JPanel implements Shape {
                     MainWindow.mainFrame.setVisible(true);
                     MainWindow.mainFrame.repaint();
                 }
+                change[0] =true;
                 point1 = e.getPoint();
                 line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
                 MainWindow.mainFrame.add(line);
@@ -335,6 +337,7 @@ public class Line extends JPanel implements Shape {
     }
 
     private void selectp1() {
+         boolean[] change = {false};
         MainWindow.mouseListener = new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent mouseEvent) {
@@ -349,7 +352,7 @@ public class Line extends JPanel implements Shape {
             @Override
             public void mouseReleased(MouseEvent mouseEvent) {
                 CALCDETAILS();
-                if (!selectp2) MainWindow.saveToLog();
+                if (!selectp2&& change[0]) MainWindow.saveToLog();
                 mainFrame.removeMouseListener(MainWindow.mouseListener);
                 mainFrame.removeMouseMotionListener(MainWindow.mouseMotionListener);
             }
@@ -373,6 +376,7 @@ public class Line extends JPanel implements Shape {
                     MainWindow.mainFrame.setVisible(true);
                     MainWindow.mainFrame.repaint();
                 }
+                change[0] =true;
                 point2 = e.getPoint();
                 line = new Line(point1, point2, color, new Color(0, 0, 0, 0));
                 MainWindow.mainFrame.add(line);

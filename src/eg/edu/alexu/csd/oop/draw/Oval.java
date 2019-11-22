@@ -68,6 +68,7 @@ public class Oval extends JPanel implements Shape {
     }
 
     private void DrawOval() {
+         boolean[] change = {false};
         MainWindow.mouseMotionListener = new MouseMotionListener() {
             @Override
             public void mouseDragged(MouseEvent e) {
@@ -76,6 +77,7 @@ public class Oval extends JPanel implements Shape {
                     MainWindow.mainFrame.setVisible(true);
                     MainWindow.mainFrame.repaint();
                 }
+                change[0] =true;
                 point2 = e.getPoint();
                 oval = new Oval(point1, point2, fillColor, fontColor);
                 MainWindow.mainFrame.add(oval);
@@ -111,7 +113,7 @@ public class Oval extends JPanel implements Shape {
                 point2 = e.getPoint();
                 CALCDETAILS();
                 shapes.add(O);
-                MainWindow.saveToLog();
+               if(change[0]) MainWindow.saveToLog();
             }
         };
         MainWindow.mainFrame.addMouseListener(MainWindow.mouseListener);

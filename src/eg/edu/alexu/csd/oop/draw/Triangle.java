@@ -301,6 +301,7 @@ public class Triangle implements Shape {
     }
 
     private void s1(int type) {
+         boolean[] change = {false};
         MainWindow.mouseListener = new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent mouseEvent) {
@@ -313,9 +314,9 @@ public class Triangle implements Shape {
             @Override
             public void mouseReleased(MouseEvent e) {
                 CURRENTDETALIS();
+                if(change[0])saveToLog();
                 mainFrame.removeMouseMotionListener(mouseMotionListener);
                 mainFrame.removeMouseListener(mouseListener);
-                saveToLog();
             }
 
             @Override
@@ -329,6 +330,7 @@ public class Triangle implements Shape {
         mouseMotionListener = new MouseMotionListener() {
             @Override
             public void mouseDragged(MouseEvent e) {
+                change[0] =true;
                 if (type == 1) {
                     p1 = e.getPoint();
                     mainFrame.remove(polygon);

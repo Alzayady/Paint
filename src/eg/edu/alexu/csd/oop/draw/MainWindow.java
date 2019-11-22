@@ -653,7 +653,7 @@ public class MainWindow implements DrawingEngine {
     // add to log another shapes list with same properties and different objects from the original
     static void saveToLog() {
         log.addLast(cloneShapes(shapes));
-        System.out.println("save to log called in " + new Exception().getStackTrace()[1].getClassName() + " , size of shapes = " + shapes.size() + ", size of log = " + log.size());
+        System.out.println("saveee to log called in " + new Exception().getStackTrace()[1].getClassName() + " , size of shapes = " + shapes.size() + ", size of log = " + log.size());
     }
 
     private static LinkedList<Shape> cloneShapes(LinkedList<Shape> shapes) {
